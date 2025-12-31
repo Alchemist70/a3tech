@@ -225,3 +225,10 @@ backend/data/rag-index.json
 *.md
 # Uncomment the line below if you want to keep README.md in the repository:
 !README.md
+
+project1.json
+project2.json
+project3.json
+backend-cleanup-classification.json
+backend-cleanup-proposal.md
+bacend/env.example
