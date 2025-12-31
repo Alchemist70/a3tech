@@ -130,27 +130,34 @@ const connectDB = async () => {
   }
 };
 
-// Connect to database
-connectDB();
+// Connect to database (fire in background, don't block app initialization)
+// Serverless functions should not wait for DB connection during module load
+setImmediate(() => {
+  connectDB().catch(err => console.error('Background DB connection failed:', err));
+});
 
 // Routes
-app.use('/api/projects', projects);
-app.use('/api/users', users);
-app.use('/api/contact', contact);
-app.use('/api/blog', blog);
-app.use('/api/faq', faq);
-app.use('/api/testimonials', testimonials);
-app.use('/api/about', about);
-app.use('/api/knowledge-base', knowledgeBase);
-app.use('/api/topics', topic);
-app.use('/api/topic-details', topicDetail);
-app.use('/api/research-areas', researchAreas);
-app.use('/api/chat', chat);
-app.use('/api/auth', auth);
-app.use('/api/visits', visits);
-app.use('/api/admin', admin);
-app.use('/api/gold-member-status', goldMemberStatus);
-app.use('/api/chat-history', chatHistory);
+try {
+  app.use('/api/projects', projects);
+  app.use('/api/users', users);
+  app.use('/api/contact', contact);
+  app.use('/api/blog', blog);
+  app.use('/api/faq', faq);
+  app.use('/api/testimonials', testimonials);
+  app.use('/api/about', about);
+  app.use('/api/knowledge-base', knowledgeBase);
+  app.use('/api/topics', topic);
+  app.use('/api/topic-details', topicDetail);
+  app.use('/api/research-areas', researchAreas);
+  app.use('/api/chat', chat);
+  app.use('/api/auth', auth);
+  app.use('/api/visits', visits);
+  app.use('/api/admin', admin);
+  app.use('/api/gold-member-status', goldMemberStatus);
+  app.use('/api/chat-history', chatHistory);
+} catch (routeErr) {
+  console.error('Failed to load routes:', routeErr);
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
