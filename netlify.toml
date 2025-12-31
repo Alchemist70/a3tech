@@ -7,7 +7,7 @@
 # IMPORTANT: Replace "https://your-backend-url.vercel.app" with your actual Vercel backend URL after deployment
 [[redirects]]
   from = "/api/*"
-  to = "https://your-backend-url.vercel.app/api/:splat"
+  to = "https://a3tech.vercel.app"
   status = 200
   force = true
 
