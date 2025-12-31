@@ -1,22 +1,15 @@
 // Markdown formatting toolbar for concept descriptions
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import { v4 as uuidv4 } from 'uuid';
 import api from '../../api';
 import { Project } from '../../types/Project';
 import styles from './ProjectDetailsTab.module.css';
 import { buildProjectPayload } from '../../utils/projectPayloadBuilder';
-import { Paper, Card, CardContent, Typography, Divider, Button, Collapse, IconButton, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
-import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import { Paper, Typography, Divider, Button, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
 
 // Toolbar button component
 import { ReactNode } from 'react';
 import MarkdownToolbar from '../MarkdownToolbar';
-const ToolbarButton = ({ label, onClick, icon, title }: { label?: ReactNode; onClick: () => void; icon?: ReactNode; title?: string }) => (
-  <Button size="small" variant="text" onClick={onClick} sx={{ minWidth: 0, px: 1 }} title={title}>
-    {icon || label}
-  </Button>
-);
 
 // For type-safe level keys
 const levels = ['beginner', 'intermediate', 'advanced'] as const;
@@ -1416,6 +1409,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                           return (
                                             <iframe
                                               key={idx}
+                                              title={`Vimeo video ${vimeoId}`}
                                               src={`https://player.vimeo.com/video/${vimeoId}`}
                                               width="320"
                                               height="180"

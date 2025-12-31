@@ -43,7 +43,6 @@ function AppContent() {
   const { darkMode } = useCustomTheme();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // On mobile, sidebar should start closed
   useEffect(() => {

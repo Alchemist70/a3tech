@@ -207,7 +207,7 @@ const ChatWidget: React.FC = () => {
   // IMPORTANT: Preserves LaTeX math notation for proper symbol rendering
   const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const linkify = (s: string) => {
-    const urlRegex = /(https?:\/\/[\w\-\./?%&=+#~:,;@()]+)/g;
+    const urlRegex = /(https?:\/\/[\w\-./?%&=+#~:,;@()]+)/g;
     return s.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
   };
   const formatSimple = (s: string) => {
@@ -252,7 +252,7 @@ const ChatWidget: React.FC = () => {
     // If project id, try to extract a human title from the snippet
     if (source.startsWith('project:')) {
       const lines = (text || '').split('\n').map(l => l.trim()).filter(Boolean);
-      const title = lines.find(l => l.length > 25 && !/[:{}()\[\]]/.test(l));
+      const title = lines.find(l => l.length > 25 && !/[:{}()[\]\]/.test(l));
       if (title) return title.substring(0, 80);
       return 'Project reference';
     }
@@ -298,7 +298,7 @@ const ChatWidget: React.FC = () => {
       // If this message looks like a confirmation ("yes, search the site"),
       // send the previous user message to the backend so RAG can search for it
       const lastUserMessage = messages.slice().reverse().find(m => m.from === 'user')?.text || undefined;
-      const isConfirmationLocal = /\b(search the site|search site|show related pages|show related|search for me|yes,? search|yes,? show|ok,? search|please search|please do|do it|go ahead|search for that|find it|show me|please show)\b/i.test(text) || (/^\s*(yes|y|ok|sure|please|affirmative|please do|do it)\s*[,\.!]?\s*$/i.test(text) && text.length < 40);
+      const isConfirmationLocal = /\b(search the site|search site|show related pages|show related|search for me|yes,? search|yes,? show|ok,? search|please search|please do|do it|go ahead|search for that|find it|show me|please show)\b/i.test(text) || (/^\s*(yes|y|ok|sure|please|affirmative|please do|do it)\s*[,.!]?\s*$/i.test(text) && text.length < 40);
       const res = await chatApi.sendMessage(text, conversationId, userId, isConfirmationLocal ? lastUserMessage : undefined);
       // If backend returns structured rag data, capture it
       const replyText = (res && (res.reply || res.message || res.data)) || '';

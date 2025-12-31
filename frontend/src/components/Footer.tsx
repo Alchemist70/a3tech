@@ -19,8 +19,6 @@ import {
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
-  const theme = useTheme();
-
   return (
     <Box
       component="footer"

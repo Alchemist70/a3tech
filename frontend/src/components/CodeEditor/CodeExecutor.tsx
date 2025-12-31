@@ -30,7 +30,6 @@ import {
   FormControlLabel
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GetAppIcon from '@mui/icons-material/GetApp';
@@ -64,7 +63,6 @@ export const CodeExecutor: React.FC<CodeExecutorProps> = ({
   const [showInput, setShowInput] = useState(false);
   const [copied, setCopied] = useState(false);
   const [useInteractive, setUseInteractive] = useState(true);
-  const [currentInput, setCurrentInput] = useState('');
   const [hasExecutedCode, setHasExecutedCode] = useState(false); // Track if user has run code
 
   const batchExec = useCodeExecution();
@@ -108,7 +106,8 @@ export const CodeExecutor: React.FC<CodeExecutorProps> = ({
       }
     };
     loadSample();
-  }, [language, getCodeSample]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language]);
 
   const handleExecute = async () => {
     if (!code.trim()) {

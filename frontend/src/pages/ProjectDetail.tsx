@@ -1,11 +1,9 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
   Chip,
   Button,
   Tabs,
@@ -18,18 +16,13 @@ import {
   Divider,
   CircularProgress,
   Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   useTheme,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   GitHub,
   Launch,
-  Science,
-  Security,
-  Biotech,
-  ExpandMore,
   CheckCircle,
   Code,
   Article,
@@ -40,7 +33,6 @@ import {
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useVisitTracker } from '../hooks/useVisitTracker';
-import { useInView } from 'react-intersection-observer';
 import api from '../api';
 import type { Project as ProjectType } from '../types/Project';
 import type { ConceptBlock } from '../types/Project';
@@ -252,6 +244,7 @@ function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme:
         return (
           <Box key={idx} sx={{ my: 2, textAlign: 'center' }}>
             <iframe
+              title={`Vimeo video ${vimeoId}`}
               src={`https://player.vimeo.com/video/${vimeoId}`}
               width="480"
               height="270"

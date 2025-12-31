@@ -368,7 +368,7 @@ const AdminBlogDetail: React.FC = () => {
                               const ytMatch = (block.url || '').match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
                               if (ytMatch) {
                                 const videoId = ytMatch[1];
-                                return <iframe width="320" height="180" src={`https://www.youtube.com/embed/${videoId}`} frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
+                                return <iframe title={`YouTube video ${videoId}`} width="320" height="180" src={`https://www.youtube.com/embed/${videoId}`} frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
                               }
                               return <video src={block.url} controls style={{ maxWidth: 320, maxHeight: 180, borderRadius: 6, marginTop: 8 }} />;
                             })()
@@ -479,12 +479,12 @@ const AdminBlogDetail: React.FC = () => {
                           const ytMatch = typeof url === 'string' && url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
                           if (ytMatch) {
                             const videoId = ytMatch[1];
-                            return <iframe width="560" height="315" src={`https://www.youtube.com/embed/${videoId}`} frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
+                            return <iframe title={`YouTube video ${videoId}`} width="560" height="315" src={`https://www.youtube.com/embed/${videoId}`} frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
                           }
                           const vimeoMatch = typeof url === 'string' && url.match(/vimeo.com\/(\d+)/);
                           if (vimeoMatch) {
                             const vimeoId = vimeoMatch[1];
-                            return <iframe src={`https://player.vimeo.com/video/${vimeoId}`} width="640" height="360" frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
+                            return <iframe title={`Vimeo video ${vimeoId}`} src={`https://player.vimeo.com/video/${vimeoId}`} width="640" height="360" frameBorder="0" allowFullScreen style={{ borderRadius: 6, marginTop: 8 }} />;
                           }
                           return <video src={url} controls style={{ maxWidth: 560, maxHeight: 315, borderRadius: 6, marginTop: 8 }} />;
                         })()
