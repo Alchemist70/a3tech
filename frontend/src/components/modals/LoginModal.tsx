@@ -5,6 +5,7 @@ import { IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuthModal } from '../../contexts/AuthModalContext';
 import { useAuth } from '../../contexts/AuthContext';
+import API_BASE_URL from '../../config/api';
 
 const LoginModal: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -82,12 +83,12 @@ const LoginModal: React.FC = () => {
       </DialogContent>
       <Box sx={{ px: 2, py: 2 }}>
         <Divider sx={{ my: 1, mb: 2 }}>OR</Divider>
-        <Button
+          <Button
           variant="outlined"
           fullWidth
           onClick={() => {
             // Redirect to Google OAuth endpoint
-            window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/auth/google`;
+              window.location.href = `${API_BASE_URL}/auth/google`;
           }}
           sx={{ mb: 2, textTransform: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
           startIcon={<img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ height: '20px', width: '20px' }} />}

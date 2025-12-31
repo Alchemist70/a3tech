@@ -4,6 +4,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import api from '../../api';
 import { useAuthModal } from '../../contexts/AuthModalContext';
+import API_BASE_URL from '../../config/api';
 
 const SignupModal: React.FC = () => {
   const [name, setName] = useState('');
@@ -222,7 +223,7 @@ const SignupModal: React.FC = () => {
             fullWidth
             onClick={() => {
               // Redirect to Google OAuth endpoint
-              window.location.href = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000'}/auth/google`;
+              window.location.href = `${API_BASE_URL}/auth/google`;
             }}
             sx={{ mb: 2, textTransform: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}
             disabled={loading}
