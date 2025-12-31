@@ -89,6 +89,7 @@ dist/
 # Gatsby
 .cache/
 public
+!frontend/public
 
 # Vue.js
 node_modules/
