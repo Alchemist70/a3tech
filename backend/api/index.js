@@ -1,7 +1,6 @@
 // Vercel Serverless Function Entry Point
 // This file serves as the entry point for Vercel serverless functions
-// It exports the Express app configured for serverless deployment
-// Located at root/api/index.js for Vercel compatibility 
+// It exports the Express app configured for serverless deployment h
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -12,38 +11,37 @@ const expressRateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const passport = require('passport');
 const session = require('express-session');
-const path = require('path');
 
-// Load environment variables from backend/.env (if exists) or root .env
-dotenv.config({ path: path.join(__dirname, '../backend/.env') });
-dotenv.config(); // Also load from root
+// Load environment variables
+dotenv.config();
 
 // Import config
-const config = require('../backend/config/config');
-
-// Import passport configuration
-require('../backend/config/passport-google');
+const config = require('../config/config');
 
 // Import routes
-const projects = require('../backend/routes/projects');
-const users = require('../backend/routes/users');
-const contact = require('../backend/routes/contact');
-const blog = require('../backend/routes/blog');
-const faq = require('../backend/routes/faq');
-const testimonials = require('../backend/routes/testimonials');
-const about = require('../backend/routes/about');
-const knowledgeBase = require('../backend/routes/knowledgeBase');
-const topic = require('../backend/routes/topic');
-const topicDetail = require('../backend/routes/topicDetail');
-const researchAreas = require('../backend/routes/researchAreas');
-const chat = require('../backend/routes/chat');
-const auth = require('../backend/routes/auth');
-const visits = require('../backend/routes/visits');
-const admin = require('../backend/routes/admin');
-const goldMemberStatus = require('../backend/routes/goldMemberStatus');
-const chatHistory = require('../backend/routes/chatHistory');
+const projects = require('../routes/projects');
+const users = require('../routes/users');
+const contact = require('../routes/contact');
+const blog = require('../routes/blog');
+const faq = require('../routes/faq');
+const testimonials = require('../routes/testimonials');
+const about = require('../routes/about');
+const knowledgeBase = require('../routes/knowledgeBase');
+const topic = require('../routes/topic');
+const topicDetail = require('../routes/topicDetail');
+const researchAreas = require('../routes/researchAreas');
+const chat = require('../routes/chat');
+const auth = require('../routes/auth');
+const visits = require('../routes/visits');
+const admin = require('../routes/admin');
+const goldMemberStatus = require('../routes/goldMemberStatus');
+const chatHistory = require('../routes/chatHistory');
+
+// Import passport configuration
+require('../config/passport-google');
 
 const app = express();
+const path = require('path');
 
 // Trust proxy for accurate IP addresses behind proxies (important for Vercel)
 app.set('trust proxy', 1);
@@ -79,6 +77,18 @@ app.use(session({
 // Passport initialization
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Serve uploaded files (if using file uploads)
+// Note: For production, consider using cloud storage (S3, Cloudinary, etc.)
+// For Vercel, file uploads should use cloud storage as serverless functions are stateless
+try {
+  const uploadsRouter = require('../routes/uploads');
+  app.use('/api/uploads', uploadsRouter);
+  // Static file serving may not work well on Vercel - consider cloud storage
+  // app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+} catch (e) {
+  console.warn('Uploads route not available:', e.message);
+}
 
 // Rate limiting with safe key generator
 const safeKeyGenerator = (req) => {
@@ -141,18 +151,6 @@ app.use('/api/visits', visits);
 app.use('/api/admin', admin);
 app.use('/api/gold-member-status', goldMemberStatus);
 app.use('/api/chat-history', chatHistory);
-
-// Serve uploaded files (if using file uploads)
-// Note: For production, consider using cloud storage (S3, Cloudinary, etc.)
-// For Vercel, file uploads should use cloud storage as serverless functions are stateless
-try {
-  const uploadsRouter = require('../backend/routes/uploads');
-  app.use('/api/uploads', uploadsRouter);
-  // Static file serving may not work well on Vercel - consider cloud storage
-  // app.use('/uploads', express.static(path.join(__dirname, '../backend/uploads')));
-} catch (e) {
-  console.warn('Uploads route not available:', e.message);
-}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
