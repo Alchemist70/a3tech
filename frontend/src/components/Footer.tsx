@@ -8,7 +8,6 @@ import {
   IconButton,
   Divider,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import {
   GitHub,
   LinkedIn,

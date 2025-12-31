@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, CircularProgress } from '@mui/material';
 import api from '../../api';
 import { v4 as uuidv4 } from 'uuid';
-import RichTextEditor from '../../components/admin/RichTextEditor';
 import TOCEditor from '../../components/admin/TOCEditor';
 import { Box as MuiBox } from '@mui/material';
 

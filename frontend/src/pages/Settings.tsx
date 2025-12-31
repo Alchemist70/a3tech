@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Paper, Typography, Divider, Switch, FormControlLabel, Button, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, RadioGroup, Radio, TextField, Avatar, CircularProgress, useTheme } from '@mui/material';
+import { Box, Paper, Typography, Divider, Switch, FormControlLabel, Button, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, RadioGroup, Radio, TextField, Avatar, CircularProgress } from '@mui/material';
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,6 @@ import api from '../api';
 const Settings: React.FC = () => {
   const { darkMode, toggleDarkMode } = useCustomTheme();
   const { user, logout, updateUser } = useAuth();
-  const theme = useTheme();
   const [language, setLanguage] = useState<string>(() => localStorage.getItem('language') || 'en');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
     const raw = localStorage.getItem('notificationsEnabled');

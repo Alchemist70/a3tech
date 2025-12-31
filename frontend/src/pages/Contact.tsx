@@ -19,12 +19,10 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
 } from '@mui/material';
 import './sections.css';
 import {
   Email,
-  Phone,
   LocationOn,
   Send,
   CheckCircle,
@@ -38,7 +36,6 @@ import { useInView } from 'react-intersection-observer';
 import React, { useState } from 'react';
 
 const AnimatedBox = motion(Box);
-const AnimatedCard = motion(Card);
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({

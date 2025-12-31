@@ -51,68 +51,7 @@ type QuizQuestion = {
 
 type QuizLevel = 'beginner' | 'intermediate' | 'advanced';
 
-type QuizData = {
-  [key in QuizLevel]: QuizQuestion[];
-};
-
-// Mock quizzes data structure
-const mockQuizzes: QuizData = {
-  beginner: [
-    {
-      question: "What is biomarker discovery?",
-      options: [
-        "Finding new biological indicators",
-        "Testing existing markers",
-        "Studying diseases",
-        "None of the above"
-      ],
-      answer: 0,
-      explanations: [
-        "Correct! Biomarker discovery involves finding new biological indicators.",
-        "Incorrect. Testing existing markers is different from discovery.",
-        "Incorrect. While related, this is too broad.",
-        "Incorrect. Biomarker discovery is about finding new indicators."
-      ]
-    }
-  ],
-  intermediate: [
-    {
-      question: "Which technique is most commonly used in biomarker analysis?",
-      options: ["Mass spectrometry", "Microscopy", "DNA sequencing", "PCR"],
-      answer: 0,
-      explanations: [
-        "Correct! Mass spectrometry is a key technique in biomarker analysis.",
-        "Incorrect. While useful, microscopy is not the primary technique.",
-        "Incorrect. DNA sequencing is more relevant to genomics.",
-        "Incorrect. PCR is more relevant to genetic analysis."
-      ]
-    }
-  ],
-  advanced: [
-    {
-      question: "What is proteomics?",
-      options: ["Study of proteins", "Study of genes", "Study of cells", "Study of tissues"],
-      answer: 0,
-      explanations: [
-        "Correct! Proteomics is the large-scale study of proteins.",
-        "Incorrect. The study of genes is genomics.",
-        "Incorrect. The study of cells is cytology.",
-        "Incorrect. The study of tissues is histology."
-      ]
-    }
-  ]
-};
 const AnimatedCard = motion(Card);
-
-// Shared quiz state for all levels
-const useSharedQuizState = (numQuestions: number) => {
-  const [selected, setSelected] = useState<{ [key: number]: number | null }>({});
-  // Handler to select an option for a question (syncs across levels)
-  const handleSelect = (qIdx: number, optIdx: number) => {
-    setSelected(prev => ({ ...prev, [qIdx]: optIdx }));
-  };
-  return { selected, handleSelect };
-};
 
 // Quiz component for interactive feedback, now independent per level
 const Quiz = ({ questions }: { questions: QuizQuestion[] }) => {

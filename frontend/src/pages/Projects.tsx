@@ -44,7 +44,7 @@ const AnimatedCard = motion(Card);
 
 const Projects: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [projects, setProjects] = useState<any[]>(projectsData);
   const [filteredProjects, setFilteredProjects] = useState<any[]>(projectsData);
   const [categories, setCategories] = useState<{ value: string; label: string; order?: number }[]>(defaultCategories);

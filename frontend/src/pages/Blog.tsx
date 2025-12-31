@@ -17,7 +17,6 @@ import {
   Pagination,
   CircularProgress,
   Alert,
-  Button,
   Breadcrumbs,
   Link,
 } from '@mui/material';
@@ -47,7 +46,7 @@ const AnimatedCard = motion(Card);
 
 const Blog: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState<any[]>(blogPostsData);
   const [filteredPosts, setFilteredPosts] = useState<any[]>(blogPostsData);
   const [loading, setLoading] = useState(false);

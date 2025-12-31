@@ -56,7 +56,7 @@ export const usePremiumStatus = () => {
 
     verifyPremiumStatus();
     return () => { mounted = false; };
-  }, [isAuthenticated, authLoading, user?._id]);
+  }, [isAuthenticated, authLoading, user]);
 
   return { isPremium, isLoading };
 };

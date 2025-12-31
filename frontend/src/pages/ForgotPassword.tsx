@@ -8,7 +8,7 @@ import {
   Alert,
   Link
 } from '@mui/material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+
 import api from '../api';
 import { useAuthModal } from '../contexts/AuthModalContext';
 
@@ -18,7 +18,6 @@ const ForgotPassword: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   
-  const navigate = useNavigate();
   const { openLogin } = useAuthModal();
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,13 +1,11 @@
 import React from 'react';
 import { Box, AppBar, Toolbar, Typography } from '@mui/material';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const { darkMode } = useTheme();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

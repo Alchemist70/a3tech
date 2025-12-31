@@ -20,20 +20,6 @@ export const generateShareMessage = (title: string, description?: string): strin
   return message;
 };
 
-/**
- * Generate platform-specific CTAs
- */
-const getPlatformCTA = (platform: string): string => {
-  const ctas: { [key: string]: string } = {
-    whatsapp: 'Share on WhatsApp',
-    facebook: 'Share on Facebook',
-    twitter: 'Share on Twitter',
-    linkedin: 'Share on LinkedIn',
-    email: 'Share via Email',
-  };
-  return ctas[platform] || 'Share';
-};
-
 export const shareToSocialMedia = {
   whatsapp: (options: ShareOptions) => {
     // Professional message: Title + optional description + URL

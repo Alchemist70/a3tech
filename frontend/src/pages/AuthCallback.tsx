@@ -69,7 +69,7 @@ const AuthCallback: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [searchParams, navigate, setToken]);
+  }, [searchParams, navigate, setToken, updateUser]);
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', gap: 2 }}>

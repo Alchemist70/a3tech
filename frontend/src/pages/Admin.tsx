@@ -390,42 +390,6 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleAddCategoryInline = async (name: string, idx?: number) => {
-    const trimmed = (name || '').trim();
-    if (!trimmed) return setCategoriesError('Category name required');
-    // Client-side duplicate check (case-insensitive) against existing category names only
-    if (projectCategories.some((c: any) => {
-      const existing = typeof c === 'string' ? c : (c?.name || '');
-      return String(existing).trim().toLowerCase() === String(trimmed).trim().toLowerCase();
-    })) {
-      return setCategoriesError('Category already exists');
-    }
-    try {
-      setCategoriesLoading(true);
-      const res = await api.post('/projects/categories', { name: trimmed });
-      const created = res.data?.data;
-      if (created && created.name) {
-        // replace the inline/local entry at idx if provided, otherwise append
-        setProjectCategories(prev => {
-          const copy = Array.isArray(prev) ? [...prev] : [];
-          if (typeof idx === 'number' && idx >= 0 && idx < copy.length) {
-            copy[idx] = { name: created.name, _id: created._id };
-          } else if (!copy.some((c: any) => String(c.name).toLowerCase() === String(created.name).toLowerCase())) {
-            copy.push({ name: created.name, _id: created._id });
-          }
-          return copy;
-        });
-        setEditingCategoryId(null);
-        setEditingCategoryName('');
-        setCategoriesError(null);
-      }
-    } catch (err: any) {
-      setCategoriesError(err?.response?.data?.message || 'Failed to create category');
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
-
   const onEditProject = (updatedProject: Project) => {
     setProjects((prev) => prev.map((proj) =>
       (proj.id === updatedProject.id || proj._id === updatedProject._id)
@@ -526,12 +490,6 @@ const Admin: React.FC = () => {
   const [faqDeleteDialogOpen, setFaqDeleteDialogOpen] = useState(false);
   const [faqDeleteTarget, setFaqDeleteTarget] = useState<{ idx: number; faq: any } | null>(null);
 
-  // Gold members (Users tab)
-  const [goldMembers, setGoldMembers] = useState<any[] | null>(null);
-  const [goldEmail, setGoldEmail] = useState('');
-  const [goldLoading, setGoldLoading] = useState(false);
-  const [goldError, setGoldError] = useState<string | null>(null);
-
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
@@ -594,7 +552,6 @@ const Admin: React.FC = () => {
             return b;
           });
           setBlogs(data);
-          setBlogsLoading(false);
         })
         .catch(() => {
           setBlogs(initialBlogs);
@@ -707,26 +664,6 @@ const Admin: React.FC = () => {
       })();
     }
     // eslint-disable-next-line
-  }, [tab]);
-
-  // Fetch gold members when the Users tab is opened
-  const fetchGoldMembers = async () => {
-    try {
-      setGoldLoading(true);
-      const res = await api.get('/gold-members');
-      const data = Array.isArray(res.data?.data) ? res.data.data : [];
-      setGoldMembers(data);
-    } catch (e) {
-      setGoldError('Failed to load gold members');
-    } finally {
-      setGoldLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tab === 11) {
-      fetchGoldMembers();
-    }
   }, [tab]);
 
   const fetchProjectCategories = async () => {

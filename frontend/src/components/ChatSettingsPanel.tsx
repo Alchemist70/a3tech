@@ -73,12 +73,9 @@ export const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
   } = useChatPersistence(conversationId);
 
   useEffect(() => {
-    if (open && tabValue === 1) {
-      loadHistories();
-    }
-  }, [open, tabValue]);
-
-  const loadHistories = async () => {
+    if (!open || tabValue !== 1) return;
+    
+    const loadHistories = async () => {
     const data = await fetchHistories(100);
     // fetchHistories returns an array of conversations (or null on error).
     // Older code expected an object with a `data` property; normalize here.
@@ -87,7 +84,9 @@ export const ChatSettingsPanel: React.FC<ChatSettingsPanelProps> = ({
     } else {
       setHistories([]);
     }
-  };
+      loadHistories();
+    }
+  }, [open, tabValue, fetchHistories]);
 
   const handleExportJson = async () => {
     const success = await exportHistory();

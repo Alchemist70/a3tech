@@ -1,14 +1,12 @@
 // Markdown formatting toolbar for concept descriptions
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { ExpandMore } from '@mui/icons-material';
 import api from '../../api';
 import { Project } from '../../types/Project';
 import styles from './ProjectDetailsTab.module.css';
 import { buildProjectPayload } from '../../utils/projectPayloadBuilder';
 import { Paper, Typography, Divider, Button, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
-
-// Toolbar button component
-import { ReactNode } from 'react';
 import MarkdownToolbar from '../MarkdownToolbar';
 
 // For type-safe level keys

@@ -18,7 +18,7 @@ import {
   Tooltip
 } from '@mui/material';
 import { CheckCircle, Cancel, Add as AddIcon } from '@mui/icons-material';
-import { fetchGoldMembers, addGoldMember, removeGoldMember } from '../../api/goldMembers';
+import { addGoldMember, removeGoldMember } from '../../api/goldMembers';
 import { fetchUsersWithGoldMemberStatus, UserWithGoldMemberStatus } from '../../api/users';
 
 const AdminUsersTab: React.FC = () => {

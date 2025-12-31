@@ -40,7 +40,7 @@ const Bookmarks: React.FC = () => {
     };
 
     fetchBookmarks();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, openLogin]);
 
   const handleRemoveBookmark = async (bookmark: any) => {
     setDeleting(true);

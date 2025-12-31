@@ -46,7 +46,6 @@ const researchAreas = [
 ];
 
 const AnimatedBox = motion(Box);
-const AnimatedTypography = motion(Typography);
 
 const Home: React.FC = () => {
   const theme = useTheme();
@@ -59,7 +58,6 @@ const Home: React.FC = () => {
     threshold: 0.1,
   });
   const [categories, setCategories] = useState<any[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(false);
   const [featuredProjects, setFeaturedProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
@@ -71,7 +69,6 @@ const Home: React.FC = () => {
     let mounted = true;
     const fetchCategories = async () => {
       try {
-        setLoadingCategories(true);
         const response = await api.get('/knowledge-base/subjects');
         const data = Array.isArray(response.data) ? response.data : response.data?.data || [];
         if (mounted) {
@@ -82,10 +79,6 @@ const Home: React.FC = () => {
         console.error('Error fetching categories:', error);
         if (mounted) {
           setCategories([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoadingCategories(false);
         }
       }
     };

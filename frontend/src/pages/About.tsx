@@ -30,7 +30,6 @@ import api from '../api';
 import { useInView } from 'react-intersection-observer';
 
 const AnimatedBox = motion(Box);
-const AnimatedCard = motion(Card);
 
 const About: React.FC = () => {
   const [ref, inView] = useInView({
@@ -97,10 +96,12 @@ const About: React.FC = () => {
     "Achieved 40% improvement in federated learning convergence speed",
     "Maintained differential privacy guarantees of ε = 5 and δ = 10⁻⁵"
   ];
-  // eslint-disable-next-line no-console
+  
+  // Log achievements when data changes
   React.useEffect(() => {
+    // eslint-disable-next-line no-console
     console.log('[About page] Using achievements:', achievements, 'fromData:', !!aboutData?.achievements?.length);
-  }, [achievements, aboutData]);
+  }, [achievements]);
 
   return (
     <Box className="section-bg" style={{ minHeight: '100vh' }}>
