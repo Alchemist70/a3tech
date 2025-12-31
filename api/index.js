@@ -1,7 +1,7 @@
 // Vercel Serverless Function Entry Point
 // This file serves as the entry point for Vercel serverless functions
 // It exports the Express app configured for serverless deployment
-// Located at root/api/index.js for Vercel compatibility b
+// Located at root/api/index.js for Vercel compatibility 
 
 const express = require('express');
 const mongoose = require('mongoose');
