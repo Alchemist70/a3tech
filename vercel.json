@@ -1,15 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/api/index.js"
+      "dest": "api/index.js"
     },
     {
       "src": "/(.*)",
-      "status": 200,
       "dest": "frontend/build/index.html"
     }
   ],
@@ -17,7 +14,7 @@
     "NODE_ENV": "production"
   },
   "functions": {
-    "backend/api/index.js": {
+    "api/index.js": {
       "memory": 1024,
       "maxDuration": 30
     }
