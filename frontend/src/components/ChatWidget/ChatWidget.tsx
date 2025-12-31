@@ -252,7 +252,7 @@ const ChatWidget: React.FC = () => {
     // If project id, try to extract a human title from the snippet
     if (source.startsWith('project:')) {
       const lines = (text || '').split('\n').map(l => l.trim()).filter(Boolean);
-      const title = lines.find(l => l.length > 25 && !/[:{}()[\]\]/.test(l));
+      const title = lines.find(l => l.length > 25 && !/[:{}()\[\]]/.test(l));
       if (title) return title.substring(0, 80);
       return 'Project reference';
     }
