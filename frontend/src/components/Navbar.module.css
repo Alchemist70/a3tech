@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Cormorant+Garamond:wght@500;700&family=Lobster&family=Parisienne&display=swap');
+
+.navbar {
+  display: flex;
+  align-items: center;
+  /* background: linear-gradient(90deg, #2fbee1 0%, #6dd5ed 100%) !important; */
+  background: rgb(203, 168, 236) !important;
+  padding: 0 32px;
+  min-height: 10px;
+  border-bottom: 1.5px solid #348c3e !important;
+}
+
+/* Logo container */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-right: 32px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Pacifico', 'Dancing Script', 'Caveat', cursive, sans-serif;
+}
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@700&family=Caveat:wght@700&display=swap');
+
+/* A3 text */
+.a3-text {
+  color: #2196f3; /* theme blue or adjust as needed */
+  font-weight: 700;
+  font-size: 45px !important;
+  font-family: 'Lobster', cursive !important;
+  margin-right: 8px;
+}
+
+[data-theme="dark"] .a3-text {
+  color: #80c5ff; /* lighter blue for better visibility in dark mode */
+}
+
+/* Tech text */
+.tech-text {
+  color: red;
+  font-weight: 900;
+  font-size: 32px !important;
+  font-family: 'Playfair Display', serif !important;
+}
+
+/* 🔥 optional gradient for Tech */
+.navbar-logo span.gradient {
+  background: linear-gradient(90deg, #ff0000, #ff6f61);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+
+.navbar-menu {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.navbar-link {
+  color: #fff;
+  font-weight: 500;
+  font-size: 1.08rem;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 6px 6px 0 0;
+  transition: background 0.18s, color 0.18s;
+  background: transparent;
+}
+
+.navbar-link.active,
+.navbar-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #1d1a7e;
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    flex-direction: column;
+    padding: 0 8px;
+  }
+
+  .navbar-menu {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .navbar-link {
+    padding: 10px 8px;
+    border-radius: 0;
+  }
+}

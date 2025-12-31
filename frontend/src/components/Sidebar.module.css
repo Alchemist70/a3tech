@@ -1,0 +1,140 @@
+.sidebarDrawer {
+  width: 240px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  position: fixed;
+  top: 64px; /* align under the AppBar */
+  left: 0;
+  height: calc(100vh - 64px);
+  z-index: 1200;
+}
+
+[data-theme="dark"] .sidebarDrawer {
+  background: #1e293b;
+  border-right: 1px solid #334155;
+}
+
+.sidebarTop {
+  display: flex;
+  justify-content: center;  
+  align-items: center;
+  padding: 24px 0 8px 0;
+  margin-bottom: 30px;
+  margin-top: 65px;
+}
+
+.downloadAppBtn {
+  width: 180px;
+  font-weight: 700;
+  font-size: 1rem !important;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Custom font size for list items */
+.sidebarListItemText {
+  font-size: 0.95rem !important;
+  font-weight: 500;
+  color: #333;
+}
+
+[data-theme="dark"] .sidebarListItemText {
+  color: #f1f5f9;
+}
+
+/* Optional: smaller font for nested research areas */
+.sidebarSubItemText {
+  font-size: 0.95rem !important;
+  color: #555;
+}
+
+[data-theme="dark"] .sidebarSubItemText {
+  color: #cbd5e1;
+}
+
+/* Visually hidden helper for accessibility (screen readers and keyboard users) */
+.visuallyHidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+  border: 0; padding: 0; margin: -1px;
+}
+
+/* Responsive: collapse sidebar on smaller screens and hide text labels */
+@media (max-width: 960px) {
+  .sidebarDrawer {
+    width: 72px;
+    position: fixed;
+    top: 64px;
+    height: calc(100vh - 64px);
+  }
+  .sidebarListItemText {
+    display: none !important;
+  }
+  .sidebarSubItemText {
+    display: none !important;
+  }
+  .downloadAppBtn {
+    width: 56px;
+    font-size: 0.75rem !important;
+  }
+}
+/* On very small screens the sidebar collapses via temporary drawer handled by Navbar */
+@media (max-width: 600px) {
+  .sidebarDrawer {
+    width: 0; /* visually collapse but temporary drawer will be used */
+    visibility: hidden;
+  }
+}
+
+/* Drag handle for Admin research area items (visual affordance). */
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+}
+[data-theme="dark"] .dragHandle {
+  color: #94a3b8;
+}
+.dragHandle:focus {
+  outline: 2px solid rgba(25, 118, 210, 0.6);
+  background: rgba(25, 118, 210, 0.06);
+}
+[data-theme="dark"] .dragHandle:focus {
+  outline: 2px solid rgba(74, 158, 255, 0.6);
+  background: rgba(74, 158, 255, 0.1);
+}
+.dragHandle:hover {
+  color: #333;
+  background: rgba(0,0,0,0.02);
+}
+[data-theme="dark"] .dragHandle:hover {
+  color: #f1f5f9;
+  background: rgba(255,255,255,0.05);
+}
+.dragHandleIcon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
+
+/* Slight highlight when an item is being dragged */
+.draggingItem {
+  opacity: 0.9;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  border-color: #ddd;
+}
+[data-theme="dark"] .draggingItem {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border-color: #475569;
+}

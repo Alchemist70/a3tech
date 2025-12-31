@@ -1,0 +1,82 @@
+{
+  "title": "Mechanistic RAG-LLM-GNN for Explainable Multi-Omics Biomarker Discovery",
+  "subtitle": "A Retrieval-Augmented LLM-Guided GNN for Mechanistic, Interpretable Biomarker Discovery",
+  "description": "Trustworthy biomarker discovery from multi-omics requires models that are both accurate and mechanistically interpretable. This project presents a Retrieval-Augmented Large Language Model guided Graph Neural Network (RAG-LLM-GNN) for explainable multi-omics biomarker discovery, integrating heterogeneous omics data with curated molecular knowledge to yield sparse, pathway-consistent panels and causal-style rationales.",
+  "detailedDescription": "The approach constructs a molecular interaction graph from public resources (e.g., STRING, Reactome, KEGG) and encodes multi-omics signals via a modality-aware GNN. A biomedical LLM, coupled with targeted retrieval from pathway databases and literature, injects mechanistic priors by shaping the objective with pathway-sparsity and evidence-alignment constraints, and by masking implausible interactions during training. The method includes a counterfactual auditing module to simulate perturbations and validate mechanistic rationales.",
+  "technicalDetails": {
+    "technologies": ["Python", "PyTorch", "Graph Neural Networks", "Large Language Models", "Bioinformatics"],
+    "methodologies": ["Retrieval-Augmented Generation", "Mechanistic Priors", "Pathway-Sparsity", "Evidence Alignment", "Counterfactual Auditing"],
+    "algorithms": ["GNN", "LLM", "STRING/Reactome/KEGG Integration"],
+    "datasets": ["Multi-omics datasets", "STRING", "Reactome", "KEGG"]
+  },
+  "educationalContent": {
+    "beginner": {
+      "summary": "This project helps scientists find important biomarkers in complex biological data using AI that can explain its reasoning, making discoveries more trustworthy and useful for medicine.",
+      "keyConcepts": [
+        "Biomarker Discovery",
+        "Multi-Omics Integration",
+        "Explainable AI",
+        "Mechanistic Reasoning"
+      ],
+      "realWorldApplications": [
+        "Precision medicine through interpretable biomarker panels",
+        "Faster drug discovery with mechanistic insights",
+        "Improved trust in AI-driven biological research"
+      ]
+    },
+    "intermediate": {
+      "methodology": "The RAG-LLM-GNN system builds a molecular graph from curated databases, encodes omics data, and uses a biomedical LLM to inject mechanistic priors. Pathway-sparsity and evidence-alignment are enforced during training, and counterfactual auditing validates the model's explanations.",
+      "technicalApproach": "Combines GNNs for data encoding, LLMs for knowledge retrieval and prior injection, and custom loss functions for interpretability.",
+      "challenges": [
+        "Integrating heterogeneous omics data",
+        "Ensuring mechanistic interpretability",
+        "Validating model explanations"
+      ],
+      "solutions": [
+        "Curated knowledge integration",
+        "Mechanistic loss shaping",
+        "Counterfactual auditing"
+      ]
+    },
+    "advanced": {
+      "implementation": "Implemented in PyTorch, integrating GNNs with LLM-based retrieval modules. Pathway and evidence constraints are encoded in the loss. Counterfactual auditing is performed post-training.",
+      "performanceMetrics": [
+        "Improved stability and faithfulness of explanations",
+        "Sparse, pathway-consistent biomarker panels",
+        "Competitive predictive accuracy"
+      ],
+      "researchContributions": [
+        "First RAG-LLM-GNN for multi-omics biomarker discovery",
+        "Mechanistic, interpretable AI for biology",
+        "Open-source framework for explainable omics analysis"
+      ],
+      "futureWork": [
+        "Clinical validation studies",
+        "Expansion to additional omics modalities",
+        "Integration with electronic health records"
+      ]
+    }
+  },
+  "media": {
+    "images": ["rag-llm-gnn-architecture.png"],
+    "videos": [],
+    "diagrams": ["mechanistic-explanation-diagram.svg"],
+    "codeSnippets": ["rag-llm-gnn-training.py"]
+  },
+  "publications": [
+    {
+      "title": "Mechanistic RAG-LLM-GNN for Explainable Multi-Omics Biomarker Discovery",
+      "authors": ["Your Name", "Collaborator Name"],
+      "venue": "To be submitted",
+      "year": 2025,
+      "status": "preprint"
+    }
+  ],
+  "githubUrl": "https://github.com/example/rag-llm-gnn-biomarker",
+  "demoUrl": "https://demo.example.com/rag-llm-gnn",
+  "category": "biomarker-discovery",
+  "tags": ["biomarker-discovery", "multi-omics", "explainable-ai", "gnn", "llm"],
+  "featured": true,
+  "createdAt": "2025-09-03T00:00:00.000Z",
+  "updatedAt": "2025-09-03T00:00:00.000Z"
+}

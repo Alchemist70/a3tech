@@ -1,0 +1,140 @@
+{
+  "generated_at": "2025-11-04T14:52:00Z",
+  "method": "pattern-based classification from directory listing",
+  "summary": {
+    "total_top_level_entries_scanned": "large",
+    "notes": "This classification uses folder/filename heuristics (globs and representative samples). If you want a literal entry for every single file, I can expand this into a full list (it will be large)."
+  },
+  "keep": {
+    "description": "Core application files required for runtime and development.",
+    "paths": [
+      "server.js",
+      "server.ts",
+      "server.d.ts",
+      "package.json",
+      "package-lock.json",
+      "tsconfig.json",
+      "env.example",
+      "README.md",
+      "controllers/**",
+      "routes/**",
+      "models/**",
+      "utils/**",
+      "scripts/**",
+      "__tests__/**",
+      "backend/*.test.js"
+    ],
+    "representative_samples": [
+      "controllers/aboutController.js",
+      "controllers/chatController.js",
+      "routes/projects.js",
+      "models/Project.js",
+      "utils/seedData.js",
+      "scripts/addTopicUUIDs.js",
+      "__tests__/projectController.test.js"
+    ]
+  },
+  "move_to_archive": {
+    "description": "Large vendor copies, bundled libraries, or experimental materials that shouldn't live in source tree but may be kept for reference.",
+    "patterns": [
+      "**/core-js/**",
+      "**/regenerator-runtime/**",
+      "**/babel-*/**",
+      "**/node_modules/** (if present under backend)",
+      "**/*-min.js",
+      "**/*.min.js",
+      "**/*.bundle.js",
+      "**/*.gz",
+      "**/*.pack",
+      "**/pack-*.pack",
+      "**/*.ipynb",
+      "**/*.yaml (model configs)"
+    ],
+    "representative_samples": [
+      "core-js.js",
+      "regeneratorRuntime.js",
+      "babel-parser.js",
+      "pack-cc4ea63fb8fdeddf86361b5428ad86fa074946e.pack",
+      "image_utils.py",
+      "metadata_gguf.py"
+    ],
+    "suggested_target": "backend/_archive/vendor/"
+  },
+  "candidate_for_deletion": {
+    "description": "Duplicative docs, logs, and build artifacts that safely can be removed (or archived off-repo).",
+    "patterns": [
+      "README_*.md",
+      "README_*.markdown",
+      "LICENSE_*",
+      "LICENSE-*.txt",
+      "*_stdout.txt",
+      "*_stderr.txt",
+      "*.log",
+      "travis_*.yml",
+      "ci_*.yml",
+      "package_*.json",
+      "*_old.*",
+      "*_1.*",
+      "*_2.*",
+      "*_backup.*",
+      "**/*.map (if source maps for third-party libs)"
+    ],
+    "representative_samples": [
+      "README_1.md",
+      "README_100.md",
+      "LICENSE_10",
+      "10-stdout.txt",
+      "1000-stderr.txt",
+      "travis_1.yml",
+      "package_10.json",
+      "server.js.map (if created by build)"
+    ]
+  },
+  "needs_review": {
+    "description": "Files that require manual inspection before action because they may be important but are ambiguous (custom scripts, notebooks, large datasets).",
+    "patterns": [
+      "**/*.py",
+      "**/*.ipynb",
+      "**/*.yaml",
+      "**/*.yml",
+      "**/download-model.py",
+      "**/tensorrt_llm.py",
+      "**/llama_cpp_server.py",
+      "**/torch_utils.py",
+      "**/models/*.yaml",
+      "**/metadata_gguf.py"
+    ],
+    "representative_samples": [
+      "download-model.py",
+      "exllamav2.py",
+      "tensorrt_llm.py",
+      "Colab-TextGen-GPU.ipynb"
+    ]
+  },
+  "security_immediate": {
+    "items": [
+      {
+        "path": ".env",
+        "issue": "Possible secrets committed. Rotate any secrets and remove the file from git history.",
+        "recommended_action": [
+          "Rotate all API keys found in this file immediately.",
+          "git rm --cached backend/.env",
+          "Add backend/.env to .gitignore if not present.",
+          "Consider rewriting history (BFG or git-filter-repo) if the secret was pushed to remote and a full purge is required."
+        ]
+      }
+    ]
+  },
+  "counts_estimate": {
+    "README_variants": "~400+",
+    "LICENSE_variants": "~400+",
+    "package_variants": "~500+",
+    "map_files": "many (hundreds)",
+    "note": "The backend folder contains a massive number of duplicate/archival files. Exact per-file counts can be produced on request (this may take time)."
+  },
+  "next_steps": [
+    "If you want an exact per-file literal list (every file annotated), reply and I'll expand the classification into a full file-to-action JSON (warning: very large).",
+    "Alternatively we can move candidates to `backend/_archive/` in a cleanup branch (non-destructive) and then run quick validation.",
+    "I recommend immediate removal from git of `backend/.env` and rotation of secrets."
+  ]
+}
