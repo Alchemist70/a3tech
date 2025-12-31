@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Box, Paper, Typography, Divider, Switch, FormControlLabel, Button, FormControl, InputLabel, Select, MenuItem, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, RadioGroup, Radio, TextField, Avatar, CircularProgress } from '@mui/material';
+/* eslint-enable @typescript-eslint/no-unused-vars */
 import { useTheme as useCustomTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

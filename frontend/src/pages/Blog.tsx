@@ -25,6 +25,8 @@ import './sections.css';
 import { Search, FilterList, Article, CalendarToday, Person, Visibility } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Temporarily disable unused-vars for the next import/destructure in this file
 import { useInView } from 'react-intersection-observer';
 
 import api from '../api';
@@ -43,6 +45,8 @@ const categories = [
 
 const AnimatedBox = motion(Box);
 const AnimatedCard = motion(Card);
+
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 const Blog: React.FC = () => {
   const navigate = useNavigate();

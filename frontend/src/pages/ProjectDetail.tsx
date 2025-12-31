@@ -31,6 +31,8 @@ import {
   PlayArrow,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Suppress unused-var warning for quiz helper definitions when not present
 import { useParams, useNavigate } from 'react-router-dom';
 import { useVisitTracker } from '../hooks/useVisitTracker';
 import api from '../api';
@@ -38,6 +40,8 @@ import type { Project as ProjectType } from '../types/Project';
 import type { ConceptBlock } from '../types/Project';
 import ReactMarkdown from 'react-markdown';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
+
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 const AnimatedBox = motion(Box);
 

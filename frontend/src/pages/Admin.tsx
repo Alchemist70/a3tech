@@ -1147,7 +1147,7 @@ const Admin: React.FC = () => {
     };
     window.addEventListener('storage', onStorage);
     return () => { window.removeEventListener('storage', onStorage); };
-  }, []);
+  }, [location.state]);
 
   const adminLogout = async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;

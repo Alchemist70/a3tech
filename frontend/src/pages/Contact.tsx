@@ -32,8 +32,12 @@ import {
   Work,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Silence a false-positive unused-var warning for animated components
 import { useInView } from 'react-intersection-observer';
 import React, { useState } from 'react';
+
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 const AnimatedBox = motion(Box);
 

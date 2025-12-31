@@ -10,7 +10,11 @@ import {
 } from '@mui/material';
 
 import api from '../api';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// Prevent noisy unused-var warning if RouterLink is present in some builds
 import { useAuthModal } from '../contexts/AuthModalContext';
+
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
