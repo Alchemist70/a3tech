@@ -31,6 +31,15 @@ import { useInView } from 'react-intersection-observer';
 
 const AnimatedBox = motion(Box);
 
+const DEFAULT_ACHIEVEMENTS = [
+  "Published 3 research papers in top-tier conferences",
+  "Developed novel APFL-ODA framework for medical federated learning",
+  "Created explainable AI system for multi-omics biomarker discovery",
+  "Designed comprehensive security framework for Software Defined Vehicles",
+  "Achieved 40% improvement in federated learning convergence speed",
+  "Maintained differential privacy guarantees of ε = 5 and δ = 10⁻⁵"
+];
+
 const About: React.FC = () => {
   const [ref, inView] = useInView({
     triggerOnce: true,
@@ -88,19 +97,14 @@ const About: React.FC = () => {
     "Differential Privacy"
   ];
 
-  const achievements = aboutData?.achievements?.length ? aboutData.achievements : [
-    "Published 3 research papers in top-tier conferences",
-    "Developed novel APFL-ODA framework for medical federated learning",
-    "Created explainable AI system for multi-omics biomarker discovery",
-    "Designed comprehensive security framework for Software Defined Vehicles",
-    "Achieved 40% improvement in federated learning convergence speed",
-    "Maintained differential privacy guarantees of ε = 5 and δ = 10⁻⁵"
-  ];
-  
-  // Log achievements when data changes
+  const achievements = React.useMemo(() => (
+    aboutData?.achievements?.length ? aboutData.achievements : DEFAULT_ACHIEVEMENTS
+  ), [aboutData?.achievements]);
+
+  // Log achievements when source data changes
   React.useEffect(() => {
     // eslint-disable-next-line no-console
-    console.log('[About page] Using achievements:', achievements, 'fromData:', !!aboutData?.achievements?.length);
+    console.log('[About page] Using achievements:', achievements);
   }, [achievements]);
 
   return (
