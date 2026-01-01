@@ -23,10 +23,16 @@ fi
 
 # Install production dependencies only if they are missing
 if [ ! -d "node_modules" ]; then
-  echo "node_modules not found; installing production dependencies..."
-  npm ci --production
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - node_modules not found; installing production dependencies..."
+  npm ci --production --no-audit --no-fund --no-optional --prefer-offline --progress=false
+  install_status=$?
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - npm ci exit status: $install_status"
+  if [ $install_status -ne 0 ]; then
+    echo "npm ci failed with status $install_status"
+    exit $install_status
+  fi
 else
-  echo "node_modules found; skipping install"
+  echo "$(date +'%Y-%m-%d %H:%M:%S') - node_modules found; skipping install"
 fi
 
 # Ensure a PORT is set for platforms that may not provide one at build time.
