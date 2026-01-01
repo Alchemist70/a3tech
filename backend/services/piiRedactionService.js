@@ -34,7 +34,7 @@ const REDACTION_TOKENS = {
 /**
  * Detect PII in text and return matches with locations
  */
-export function detectPII(text) {
+function detectPII(text) {
   if (!text || typeof text !== 'string') return [];
 
   const detections = [];
@@ -119,7 +119,7 @@ export function detectPII(text) {
  * Redact PII from text
  * Replaces PII with redaction tokens
  */
-export function redactPII(text, redactionLevel = 'high') {
+function redactPII(text, redactionLevel = 'high') {
   if (!text || typeof text !== 'string') return text;
 
   let redacted = text;
@@ -186,7 +186,7 @@ export function redactPII(text, redactionLevel = 'high') {
  * Extract and validate names from text
  * Returns high-confidence name extractions
  */
-export function extractNames(text) {
+function extractNames(text) {
   if (!text || typeof text !== 'string') return [];
 
   const names = [];
@@ -249,14 +249,14 @@ export function extractNames(text) {
 /**
  * Check if PII is present in text
  */
-export function hasPII(text) {
+function hasPII(text) {
   return detectPII(text).length > 0;
 }
 
 /**
  * Get a summary of PII detections
  */
-export function getPIISummary(text) {
+function getPIISummary(text) {
   const detections = detectPII(text);
   const summary = {
     hasPII: detections.length > 0,
@@ -289,7 +289,7 @@ export function getPIISummary(text) {
 /**
  * Validate name against confidence threshold
  */
-export function isValidName(name, minLength = 2, maxLength = 100) {
+function isValidName(name, minLength = 2, maxLength = 100) {
   if (!name || typeof name !== 'string') return false;
   const trimmed = name.trim();
   return trimmed.length >= minLength && trimmed.length <= maxLength && /^[A-Za-z\s\-\']+$/.test(trimmed);
@@ -298,7 +298,7 @@ export function isValidName(name, minLength = 2, maxLength = 100) {
 /**
  * Sanitize name for storage (remove extra spaces, normalize case)
  */
-export function sanitizeName(name) {
+function sanitizeName(name) {
   if (!isValidName(name)) return null;
   return name
     .trim()
@@ -306,3 +306,14 @@ export function sanitizeName(name) {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
+
+// Export for CommonJS
+module.exports = {
+  detectPII,
+  redactPII,
+  extractNames,
+  hasPII,
+  getPIISummary,
+  isValidName,
+  sanitizeName
+};
