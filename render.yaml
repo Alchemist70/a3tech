@@ -3,7 +3,7 @@ services:
     name: a3tech
     runtime: node
     plan: standard
-    root: ./backend
+    root: backend
     buildCommand: npm install
     startCommand: node server.js
     envVars:
