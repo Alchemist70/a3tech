@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { getOrCreateFingerprint } from '../utils/fingerprint';
-
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+import API_BASE_URL from '../config/api';
 
 const api = axios.create({
-  // If REACT_APP_API_URL is set (e.g. https://your-backend.vercel.app), use it;
-  // otherwise default to relative /api (works in local dev with proxy).
-  baseURL: API_BASE,
+  // Use centralized API base so environment variable names are consistent
+  // across the app (`API_BASE_URL` is used by OAuth redirect code too).
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
