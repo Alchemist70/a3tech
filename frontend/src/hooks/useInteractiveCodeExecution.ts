@@ -1,5 +1,6 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
+import API_BASE_URL from '../config/api';
 
 interface ExecutionState {
   isRunning: boolean;
@@ -32,8 +33,8 @@ export function useInteractiveCodeExecution() {
     }
 
     // Connect to socket.io server at /code-execution namespace
-    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const baseUrl = apiBase.replace(/\/api\/?$/, '');
+    const apiBase = API_BASE_URL || 'http://localhost:5000';
+    const baseUrl = String(apiBase).replace(/\/api\/?$/, '');
     
     // Socket.IO v4+ connects to namespace via URL path
     // io('http://localhost:5000/code-execution') connects to /code-execution namespace
