@@ -2,8 +2,6 @@
 set -e
 
 echo "Installing backend dependencies..."
-cd ../backend
+cd backend
 npm install
 echo "Build complete!"
-
-
