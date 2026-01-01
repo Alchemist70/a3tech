@@ -19,6 +19,6 @@
     "node": "18.x"
   },
   "scripts": {
-    "postinstall": "npm --prefix backend install --production --no-audit --no-fund --no-optional --prefer-offline --progress=false"
+    "postinstall": "if [ -f backend/package.json ]; then npm --prefix backend install --production --no-audit --no-fund --no-optional --prefer-offline --progress=false; else echo 'backend/package.json not found, skipping backend install'; fi"
   }
 }
