@@ -29,5 +29,14 @@ else
   echo "node_modules found; skipping install"
 fi
 
+# Ensure a PORT is set for platforms that may not provide one at build time.
+# Render provides $PORT at runtime; default to 10000 for debugging if unset.
+if [ -z "$PORT" ]; then
+  export PORT=10000
+  echo "PORT was unset; defaulting to $PORT"
+else
+  echo "PORT is set to $PORT"
+fi
+
 echo "Starting server..."
 node server.js
