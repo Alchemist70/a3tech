@@ -1,8 +1,4 @@
-#!/bin/bash
-
-# Build script for Render deployment
-# This script installs dependencies and starts the backend server
-
+#!/usr/bin/env bash
 set -e
 
 echo "Installing backend dependencies..."
