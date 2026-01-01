@@ -12,6 +12,7 @@ import Collapse from '@mui/material/Collapse';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import api from '../api';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 // Removed: knowledgeBaseSubjects (now dynamic)
 
@@ -30,6 +31,7 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
   const [openKbDropdown, setOpenKbDropdown] = React.useState(false);
   const [subjects, setSubjects] = React.useState<Subject[]>([]);
   const [researchAreas, setResearchAreas] = React.useState<any[]>([]);
+  const { canInstall, installApp, isInstalled } = usePWAInstall();
 
   // Fetch research areas from backend so the public sidebar is driven by admin-managed content
   React.useEffect(() => {
@@ -120,14 +122,19 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
     >
       <React.Fragment>
         <Box className={styles.sidebarTop}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<DownloadIcon />}
-            className={styles.downloadAppBtn}
-          >
-            Download App
-          </Button>
+          {/* Show Download App button only when installable and not already in app mode */}
+          {canInstall && !isInstalled && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<DownloadIcon />}
+              className={styles.downloadAppBtn}
+              onClick={() => installApp()}
+              fullWidth
+            >
+              Download App
+            </Button>
+          )}
         </Box>
         <List>
           <ListItem
