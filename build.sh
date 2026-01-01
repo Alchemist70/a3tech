@@ -6,4 +6,4 @@ cd backend
 npm install
 
 echo "Starting backend server..."
-npm start
+node server.js
