@@ -10,6 +10,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Enable cross-site credentials (cookies) for authentication
+  withCredentials: true,
 });
 
 // Attach fingerprint and auth token to all requests (reads token from localStorage)
