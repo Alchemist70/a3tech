@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
-cd backend
-echo "Checking node_modules..."
-if [ ! -d "node_modules" ]; then
-  echo "node_modules not found, installing..."
-  npm install
+# Handle both local and Render deployment paths
+if [ -d "src/backend" ]; then
+  echo "Using src/backend directory"
+  cd src/backend
+elif [ -d "backend" ]; then
+  echo "Using backend directory"
+  cd backend
 else
-  echo "node_modules found, verifying..."
-  npm install --production
+  echo "Error: Cannot find backend directory"
+  exit 1
 fi
+
+echo "Installing dependencies (clean install)..."
+npm ci --production
 echo "Starting server..."
 node server.js
