@@ -1,19 +1,25 @@
 .sidebarDrawer {
   width: 240px;
-  flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #e0e0e0;
-  box-sizing: border-box;
-  position: fixed;
-  top: 64px; /* align under the AppBar */
-  left: 0;
-  height: calc(100vh - 64px);
-  z-index: 1200;
 }
 
 [data-theme="dark"] .sidebarDrawer {
   background: #1e293b;
   border-right: 1px solid #334155;
+}
+
+/* For persistent/permanent variant: apply fixed positioning */
+@media (min-width: 601px) {
+  .sidebarDrawer {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+    z-index: 1200;
+  }
 }
 
 .sidebarTop {
@@ -83,18 +89,13 @@
     font-size: 0.75rem !important;
   }
 }
-/* On very small screens the sidebar collapses via temporary drawer handled by Navbar */
+
+/* On very small screens (mobile, <= 600px), use temporary drawer
+   Do NOT apply fixed positioning - let MUI handle it */
 @media (max-width: 600px) {
-  /* For temporary drawers (mobile), keep the paper visible and full width when opened.
-     The previous rule hid the drawer entirely which prevented the MUI temporary
-     drawer from showing on some mobile devices. Use a fixed width and ensure
-     visibility so the hamburger toggle can open the drawer. */
   .sidebarDrawer {
     width: 240px;
-    position: fixed;
-    top: 56px;
-    height: calc(100vh - 56px);
-    visibility: visible;
+    position: static;
   }
 }
 
