@@ -15,6 +15,8 @@ export function usePWAInstall() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
                          (window.navigator as any).standalone === true;
     
+    console.log('[PWA] isStandalone:', isStandalone, 'display-mode:', window.matchMedia('(display-mode: standalone)').matches, 'navigator.standalone:', (window.navigator as any).standalone);
+
     if (isStandalone) {
       console.log('[PWA] App is running in standalone mode (already installed)');
       setIsInstalled(true);
@@ -22,12 +24,10 @@ export function usePWAInstall() {
       return;
     }
 
-    // Check if running in web browser mode (not in standalone app)
-    const isWebBrowser = !isStandalone && typeof window !== 'undefined';
-    
-    if (isWebBrowser) {
-      console.log('[PWA] Web browser mode detected, PWA installation available');
-    }
+    // If we reach here, we're in web browser mode - show install button
+    console.log('[PWA] Web browser mode detected - install button should be visible');
+    setCanInstall(true);
+    setIsInstalled(false);
 
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent the default mini-infobar or install prompt from appearing
@@ -35,8 +35,7 @@ export function usePWAInstall() {
       // Store the event for later use
       const evt = e as BeforeInstallPromptEvent;
       setDeferredPrompt(evt);
-      setCanInstall(true);
-      console.log('[PWA] Install prompt event fired (browser supports PWA install)');
+      console.log('[PWA] beforeinstallprompt event fired');
     };
 
     const handleAppInstalled = () => {
@@ -46,22 +45,10 @@ export function usePWAInstall() {
       setDeferredPrompt(null);
     };
 
-    // Set canInstall to true if we're in web browser mode, even if beforeinstallprompt hasn't fired yet
-    // This handles cases where browsers may not fire the event immediately or at all
-    const timer = setTimeout(() => {
-      if (isWebBrowser && !isStandalone) {
-        // If we're in web browser and not standalone, show install button
-        // This is a fallback for browsers where beforeinstallprompt may not fire immediately
-        console.log('[PWA] Timeout: Setting canInstall to true (web browser fallback)');
-        setCanInstall(true);
-      }
-    }, 1000);
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };

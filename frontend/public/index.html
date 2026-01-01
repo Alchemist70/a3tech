@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="A3 Tech" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta
       name="description"
       content="A3 Tech - Advanced AI Research Platform. Explore cutting-edge artificial intelligence, machine learning, and their applications across various domains."
@@ -36,14 +36,20 @@
       // Register Service Worker for PWA support
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('%PUBLIC_URL%/service-worker.js')
+          // Use public URL for service worker registration
+          const swPath = '%PUBLIC_URL%/service-worker.js';
+          console.log('[App] Attempting to register Service Worker from:', swPath);
+          navigator.serviceWorker.register(swPath)
             .then((registration) => {
-              console.log('[App] Service Worker registered:', registration);
+              console.log('[App] Service Worker registered successfully:', registration);
+              console.log('[App] Scope:', registration.scope);
             })
             .catch((error) => {
-              console.warn('[App] Service Worker registration failed:', error);
+              console.error('[App] Service Worker registration failed:', error);
             });
         });
+      } else {
+        console.warn('[App] Service Worker not supported by this browser');
       }
     </script>
   </body>
