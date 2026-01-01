@@ -54,8 +54,13 @@ app.use(helmet());
 const allowedOrigins = [];
 if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
 if (process.env.FRONTEND_URL_DEV) allowedOrigins.push(process.env.FRONTEND_URL_DEV);
-// Always allow localhost during local development
-allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+// Always allow localhost during local development and various localhost bindings
+allowedOrigins.push(
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000'
+);
 
 app.use(cors({
   origin: function (origin, callback) {
