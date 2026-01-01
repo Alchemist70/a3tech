@@ -18,5 +18,7 @@
   "engines": {
     "node": "18.x"
   },
-  "scripts": {}
+  "scripts": {
+    "postinstall": "if [ -f backend/package.json ]; then npm --prefix backend install --production --no-audit --no-fund --no-optional --prefer-offline --progress=false; elif [ -f package.json ] && [ -f server.js ]; then npm install --production --no-audit --no-fund --no-optional --prefer-offline --progress=false; else echo 'No backend package.json found in repo root or current dir; skipping backend install'; fi"
+  }
 }
