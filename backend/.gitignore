@@ -21,8 +21,6 @@ venv
 *pycache*
 cert.pem
 key.pem
-package.json
-package-lock.json
 Thumbs.db
 wandb
 
