@@ -19,6 +19,6 @@
     "node": "18.x"
   },
   "scripts": {
-    "postinstall": "npm --prefix backend ci --production"
+    "postinstall": "npm --prefix backend install --production --no-audit --no-fund --no-optional --prefer-offline --progress=false"
   }
 }
