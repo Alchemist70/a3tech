@@ -81,18 +81,35 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session configuration (use memory store for serverless - consider Redis for production)
-app.use(session({
+// Session configuration: prefer Redis store when available, fallback to MemoryStore
+let sessionStore = null;
+try {
+  if (process.env.REDIS_URL) {
+    const Redis = require('ioredis');
+    const connectRedis = require('connect-redis');
+    const RedisStore = connectRedis(session);
+    const redisClient = new Redis(process.env.REDIS_URL);
+    sessionStore = new RedisStore({ client: redisClient, prefix: 'sess:' });
+    console.log('Using Redis session store');
+  }
+} catch (e) {
+  console.warn('Redis session store initialization failed, falling back to MemoryStore:', e && e.message ? e.message : e);
+}
+
+const sessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-key-here',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    // In production with cross-site frontend, use secure + SameSite=None
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
-}));
+};
+
+if (sessionStore) sessionOptions.store = sessionStore;
+
+app.use(session(sessionOptions));
 
 // Passport initialization
 app.use(passport.initialize());

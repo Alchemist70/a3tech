@@ -115,16 +115,38 @@ app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session configuration for Passport
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        sameSite: 'lax'
+// Session configuration: use Redis when available to persist sessions across restarts
+try {
+    let sessionOptions = {
+        secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        }
+    };
+
+    if (process.env.REDIS_URL) {
+        const Redis = require('ioredis');
+        const connectRedis = require('connect-redis');
+        const RedisStore = connectRedis(session);
+        const redisClient = new Redis(process.env.REDIS_URL);
+        sessionOptions.store = new RedisStore({ client: redisClient, prefix: 'sess:' });
+        console.log('Using Redis session store in server');
     }
-}));
+
+    app.use(session(sessionOptions));
+} catch (e) {
+    console.warn('Failed to initialize Redis session store, falling back to MemoryStore:', e && e.message ? e.message : e);
+    app.use(session({
+        secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' }
+    }));
+}
 
 // Initialize Passport
 require('./config/passport-google');
@@ -258,6 +280,10 @@ const io = new socketIO.Server(server, {
 
 // Setup interactive code execution socket handler
 setupInteractiveCodeSocket(io);
+
+// Tune keep-alive and header timeouts to reduce premature connection closes
+server.keepAliveTimeout = parseInt(process.env.SERVER_KEEPALIVE_MS || '61000');
+server.headersTimeout = parseInt(process.env.SERVER_HEADERS_TIMEOUT_MS || '65000');
 
 // Start server
 server.listen(PORT, '0.0.0.0', () => {
