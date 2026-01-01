@@ -21,4 +21,4 @@ services:
       - key: SESSION_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://alchemistwebsite.netlify.app
+        value: https://a3tech.netlify.app
