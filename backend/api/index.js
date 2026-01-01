@@ -49,6 +49,23 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
+// Compression middleware for PWA - reduce bundle size for offline caching
+try {
+  const compression = require('compression');
+  app.use(compression({
+    level: 6,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    },
+    threshold: 1024 // Only compress responses > 1KB
+  }));
+  console.log('Compression middleware enabled for Vercel');
+} catch (e) {
+  console.warn('Compression middleware not available:', e && e.message ? e.message : e);
+}
+
+
 // CORS configuration
 // Allow only the configured frontend origin(s) and support credentials for cross-site cookies.
 const allowedOrigins = [];
@@ -114,6 +131,32 @@ app.use(session(sessionOptions));
 // Passport initialization
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Cache-Control middleware for PWA - optimize caching strategies
+app.use((req, res, next) => {
+  // Set cache headers based on route and response type
+  if (req.path.startsWith('/api/')) {
+    if (req.method === 'GET') {
+      // Cache read-only API responses (data won't change frequently)
+      if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/faq') || req.path.includes('/topics')) {
+        res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
+      } else if (req.path.includes('/user') || req.path.includes('/auth')) {
+        res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
+      } else {
+        res.set('Cache-Control', 'public, max-age=300'); // 5 minutes default
+      }
+    } else {
+      // No caching for POST, PUT, DELETE
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+  
+  // ETag support for efficient cache validation
+  res.set('ETag', `W/"${Date.now()}"`);
+  
+  next();
+});
+
 
 // Serve uploaded files (if using file uploads)
 // Note: For production, consider using cloud storage (S3, Cloudinary, etc.)
@@ -202,6 +245,17 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// PWA Update check endpoint - clients can poll to check for app updates
+app.get('/api/version', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.json({
+    version: process.env.API_VERSION || '1.0.0',
+    buildTime: process.env.BUILD_TIME || new Date().toISOString(),
+    updateAvailable: false,
+    minimumClientVersion: process.env.MINIMUM_CLIENT_VERSION || '1.0.0'
   });
 });
 

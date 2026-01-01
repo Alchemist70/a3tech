@@ -55,6 +55,22 @@ if (process.env.TRUST_PROXY) {
 const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use((0, helmet_1.default)());
+
+// Compression middleware for PWA - reduce bundle size for offline caching
+try {
+    const compression = require('compression');
+    app.use(compression({
+        level: 6,
+        filter: (req, res) => {
+            if (req.headers['x-no-compression']) return false;
+            return compression.filter(req, res);
+        },
+        threshold: 1024 // Only compress responses > 1KB
+    }));
+    console.log('Compression middleware enabled');
+} catch (e) {
+    console.warn('Compression middleware not available:', e && e.message ? e.message : e);
+}
 // Rate limiting: configured below with a safe key generator to avoid
 // express-rate-limit validation errors in development environments.
 // Note: express-rate-limit validates trust proxy vs X-Forwarded-For header. In
@@ -165,6 +181,35 @@ try {
 }
 // Logging middleware
 app.use((0, morgan_1.default)('combined'));
+
+// Cache-Control middleware for PWA - optimize caching strategies
+app.use((req, res, next) => {
+    const originalJson = res.json;
+    const originalSend = res.send;
+    
+    // Set cache headers based on route and response type
+    if (req.path.startsWith('/api/')) {
+        if (req.method === 'GET') {
+            // Cache read-only API responses (data won't change frequently)
+            if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/faq') || req.path.includes('/topics')) {
+                res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
+            } else if (req.path.includes('/user') || req.path.includes('/auth')) {
+                res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
+            } else {
+                res.set('Cache-Control', 'public, max-age=300'); // 5 minutes default
+            }
+        } else {
+            // No caching for POST, PUT, DELETE
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        }
+    }
+    
+    // ETag support for efficient cache validation
+    res.set('ETag', `W/"${Date.now()}"`);
+    
+    next();
+});
+
 // Database connection
 const connectDB = async () => {
     try {
@@ -257,6 +302,18 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+// PWA Update check endpoint - clients can poll to check for app updates
+app.get('/api/version', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.status(200).json({
+        version: process.env.API_VERSION || '1.0.0',
+        buildTime: process.env.BUILD_TIME || new Date().toISOString(),
+        updateAvailable: false, // Can be set dynamically based on env
+        minimumClientVersion: process.env.MINIMUM_CLIENT_VERSION || '1.0.0'
+    });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
