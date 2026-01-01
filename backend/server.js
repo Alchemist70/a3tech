@@ -260,7 +260,7 @@ const io = new socketIO.Server(server, {
 setupInteractiveCodeSocket(io);
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });
 exports.default = app;

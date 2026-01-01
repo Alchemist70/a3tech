@@ -3,7 +3,7 @@ set -e
 
 echo "Installing backend dependencies..."
 
-# Handle both local and Render deployment paths j 
+# Handle both local and Render deployment paths
 if [ -d "src/backend" ]; then
   echo "Using src/backend directory"
   cd src/backend
