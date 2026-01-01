@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: alchemist-backend
+    name: a3tech
     runtime: node
     plan: standard
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
