@@ -2,15 +2,40 @@ import axios from 'axios';
 import { getOrCreateFingerprint } from '../utils/fingerprint';
 import API_BASE_URL from '../config/api';
 
+// Create axios instance with sensible defaults and timeouts
 const api = axios.create({
-  // Use centralized API base so environment variable names are consistent
-  // across the app (`API_BASE_URL` is used by OAuth redirect code too).
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    Accept: 'application/json'
   },
   // Enable cross-site credentials (cookies) for authentication
   withCredentials: true,
+  // reasonable request timeout
+  timeout: 15000
+});
+
+// Simple exponential backoff retry for transient network/server errors
+api.interceptors.response.use(undefined, async (error) => {
+  const config = error?.config;
+  if (!config) return Promise.reject(error);
+
+  // Do not retry if explicitly disabled
+  if (config.__noRetry) return Promise.reject(error);
+
+  config.__retryCount = config.__retryCount || 0;
+  const MAX_RETRIES = 3;
+
+  // Retry for network errors or 5xx responses or timeouts
+  const shouldRetry = !error.response || (error.response && error.response.status >= 500) || error.code === 'ECONNABORTED';
+  if (shouldRetry && config.__retryCount < MAX_RETRIES) {
+    config.__retryCount += 1;
+    const delay = Math.min(10000, Math.pow(2, config.__retryCount) * 300 + Math.random() * 200);
+    await new Promise((res) => setTimeout(res, delay));
+    return api(config);
+  }
+
+  return Promise.reject(error);
 });
 
 // Attach fingerprint and auth token to all requests (reads token from localStorage)

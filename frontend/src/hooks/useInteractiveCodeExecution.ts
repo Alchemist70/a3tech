@@ -45,9 +45,11 @@ export function useInteractiveCodeExecution() {
       auth: { token },
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-      transports: ['websocket', 'polling']
+      reconnectionDelayMax: 10000,
+      // more attempts to survive transient network blips
+      reconnectionAttempts: 10,
+      transports: ['websocket', 'polling'],
+      timeout: 20000
     });
 
     if (!socketRef.current) {
