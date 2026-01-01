@@ -50,8 +50,22 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CORS configuration
+// Allow only the configured frontend origin(s) and support credentials for cross-site cookies.
+const allowedOrigins = [];
+if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
+if (process.env.FRONTEND_URL_DEV) allowedOrigins.push(process.env.FRONTEND_URL_DEV);
+// Always allow localhost during local development
+allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    // Allow non-browser requests like server-to-server (no origin)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: This origin is not allowed'));
+  },
   credentials: true
 }));
 
@@ -67,10 +81,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-session-secret-key-here',
   resave: false,
   saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+  cookie: {
     httpOnly: true,
-    sameSite: 'lax'
+    // In production with cross-site frontend, use secure + SameSite=None
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
 
