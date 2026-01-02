@@ -39,7 +39,7 @@ import Sidebar from './components/Sidebar';
 import AuthCallback from './pages/AuthCallback';
 
 function AppContent() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { darkMode } = useCustomTheme();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));

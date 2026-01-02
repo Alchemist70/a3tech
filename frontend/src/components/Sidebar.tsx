@@ -123,12 +123,12 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
         keepMounted: true, // Better mobile performance
       }}
       sx={{
-        // For temporary drawer on mobile
+        // For temporary drawer on mobile - let MUI handle positioning and sizing
         ...(variant === 'temporary' && {
           '& .MuiDrawer-paper': {
-            width: 240,
             boxSizing: 'border-box',
             backgroundColor: 'inherit',
+            overflow: 'auto',
           },
         }),
         // For persistent drawer on desktop
