@@ -529,11 +529,11 @@ const ProjectDetail: React.FC = () => {
 
               {/* Learn Tab */}
               {tabValue === 1 && (
-                <Box sx={(theme) => ({ display: 'flex', minHeight: 400, background: theme.palette.background.default, borderRadius: 2, boxShadow: theme.shadows[1] })}>
+                <Box sx={(theme) => ({ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 400, background: theme.palette.background.default, borderRadius: 2, boxShadow: theme.shadows[1] })}>
                   {/* Sidebar Navigation */}
-                  <Box sx={(theme) => ({ width: 300, borderRight: `1px solid ${theme.palette.divider}`, background: theme.palette.background.paper, p: 2, display: 'flex', flexDirection: 'column' })}>
+                  <Box sx={(theme) => ({ width: { xs: '100%', md: 300 }, borderRight: { xs: 'none', md: `1px solid ${theme.palette.divider}` }, borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' }, background: theme.palette.background.paper, p: { xs: 1.5, sm: 2 }, display: 'flex', flexDirection: 'column' })}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Lessons</Typography>
-                    <List>
+                    <List sx={{ flex: 1, overflow: 'auto' }}>
                       {currentContent.concepts?.map((concept: any, idx: number) => (
                         <ListItem
                           button
@@ -552,27 +552,27 @@ const ProjectDetail: React.FC = () => {
                           <ListItemText primary={concept.title} />
                         </ListItem>
                       ))}
-                      {/* Progress bar */}
-                      {currentContent.concepts?.length > 0 && (
-                        <Box sx={{ mt: 2, px: 2 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Progress: {lessonProgress[level]?.filter(Boolean).length || 0} / {currentContent.concepts.length} lessons completed
-                          </Typography>
-                          <Box sx={(theme) => ({ width: '100%', height: 8, background: theme.palette.action.disabledBackground, borderRadius: 4, mt: 0.5 })}>
-                            <Box sx={(theme) => ({ width: `${((lessonProgress[level]?.filter(Boolean).length || 0) / currentContent.concepts.length) * 100}%`, height: 8, background: theme.palette.primary.main, borderRadius: 4 })} />
-                          </Box>
-                        </Box>
-                      )}
                     </List>
+                    {/* Progress bar */}
+                    {currentContent.concepts?.length > 0 && (
+                      <Box sx={{ mt: 2, px: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Progress: {lessonProgress[level]?.filter(Boolean).length || 0} / {currentContent.concepts.length} lessons completed
+                        </Typography>
+                        <Box sx={(theme) => ({ width: '100%', height: 8, background: theme.palette.action.disabledBackground, borderRadius: 4, mt: 0.5 })}>
+                          <Box sx={(theme) => ({ width: `${((lessonProgress[level]?.filter(Boolean).length || 0) / currentContent.concepts.length) * 100}%`, height: 8, background: theme.palette.primary.main, borderRadius: 4 })} />
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
                   {/* Main Lesson Content */}
-                  <Box sx={{ flex: 1, p: 4, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                  <Box sx={{ flex: 1, p: { xs: 2, sm: 3, md: 4 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'auto' }}>
                     {currentContent.concepts && currentContent.concepts.length > 0 ? (
                       (() => {
                         const lesson = currentContent.concepts[selectedLessonIdx] || {};
                         return (
                           <>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
                               <Typography variant="h4" sx={{ fontWeight: 700 }}>
                                 {lesson.title}
                               </Typography>
@@ -587,7 +587,7 @@ const ProjectDetail: React.FC = () => {
                               </Button>
                             </Box>
                             <Divider sx={{ mb: 2 }} />
-                            <Box sx={{ mb: 3 }}>
+                            <Box sx={{ mb: 3, overflow: 'auto' }}>
                               {renderConceptBlocks(lesson.description, theme)}
                             </Box>
                             {showCodeExecutor && (
