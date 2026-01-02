@@ -104,10 +104,35 @@ self.addEventListener('fetch', (event) => {
         })
     );
   } else {
-    // For static assets: cache first, then network
+    // For static assets: use network-first for scripts/styles to avoid serving stale bundles
+    const isStaticAsset = request.destination === 'script' || request.destination === 'style' || /\.(js|css|map)$/.test(url.pathname);
+
+    if (isStaticAsset) {
+      event.respondWith(
+        fetch(request)
+          .then((response) => {
+            if (response && response.status === 200) {
+              const cloned = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+            }
+            return response;
+          })
+          .catch(() => caches.match(request).then((cached) => cached || caches.match('/index.html')))
+      );
+      return;
+    }
+
+    // For other static assets: cache first, then network (fast load), with fallback
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) {
+          // Start a background fetch to update the cache
+          fetch(request).then((response) => {
+            if (response && response.status === 200) {
+              const cloned = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+            }
+          }).catch(() => {});
           return cached;
         }
         return fetch(request).then((response) => {

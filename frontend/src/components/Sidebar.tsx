@@ -118,7 +118,7 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
       variant={variant}
       open={open}
       onClose={onClose}
-      classes={{ paper: styles.sidebarDrawer }}
+      PaperProps={{ className: styles.sidebarPaper }}
       ModalProps={{
         keepMounted: true, // Better mobile performance
       }}

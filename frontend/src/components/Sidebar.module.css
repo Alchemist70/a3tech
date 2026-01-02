@@ -1,24 +1,19 @@
-.sidebarDrawer {
-  width: 240px;
+.sidebarPaper {
+  /* Visual styling only - do NOT set positioning here. */
   background: #fff;
   border-right: 1px solid #e0e0e0;
 }
 
-[data-theme="dark"] .sidebarDrawer {
+[data-theme="dark"] .sidebarPaper {
   background: #1e293b;
   border-right: 1px solid #334155;
 }
 
 /* For persistent/permanent variant: apply fixed positioning */
 @media (min-width: 601px) {
-  .sidebarDrawer {
-    flex-shrink: 0;
+  .sidebarPaper {
+    /* Persistent/pinned drawer visuals for larger screens */
     box-sizing: border-box;
-    position: fixed;
-    top: 64px;
-    left: 0;
-    height: calc(100vh - 64px);
-    z-index: 1200;
   }
 }
 
@@ -73,11 +68,8 @@
 /* Responsive: collapse sidebar on smaller screens and hide text labels
    BUT: DO NOT apply this to mobile (≤ 600px) - see mobile-specific rule below */
 @media (max-width: 960px) and (min-width: 601px) {
-  .sidebarDrawer {
+  .sidebarPaper {
     width: 72px;
-    position: fixed;
-    top: 64px;
-    height: calc(100vh - 64px);
   }
   .sidebarListItemText {
     display: none !important;
@@ -95,7 +87,7 @@
    Do NOT set position: static - let MUI's temporary drawer manage positioning.
    Use max-width to prevent drawer from exceeding viewport on small phones. */
 @media (max-width: 600px) {
-  .sidebarDrawer {
+  .sidebarPaper {
     width: 100% !important;
     max-width: 280px !important;
     height: 100vh !important;
