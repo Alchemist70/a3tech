@@ -100,18 +100,18 @@
     display: block !important;
     font-size: 0.95rem !important;
     font-weight: 500;
-    color: #333;
+    color: #000 !important;
   }
   [data-theme="dark"] .sidebarListItemText {
-    color: #f1f5f9;
+    color: #f1f5f9 !important;
   }
   .sidebarSubItemText {
     display: block !important;
     font-size: 0.95rem !important;
-    color: #555;
+    color: #1a1a1a !important;
   }
   [data-theme="dark"] .sidebarSubItemText {
-    color: #cbd5e1;
+    color: #cbd5e1 !important;
   }
   .downloadAppBtn {
     width: 180px !important;
