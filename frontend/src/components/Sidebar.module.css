@@ -90,12 +90,36 @@
   }
 }
 
-/* On very small screens (mobile, <= 600px), use temporary drawer
-   Do NOT apply fixed positioning - let MUI handle it */
+/* On mobile (≤ 600px), use temporary drawer with full width and TEXT VISIBLE.
+   This rule overrides the 960px rules above for mobile-only. */
 @media (max-width: 600px) {
   .sidebarDrawer {
-    width: 240px;
-    position: static;
+    width: 240px !important;
+    position: static !important;
+    height: auto !important;
+    top: auto !important;
+  }
+  /* RESTORE text visibility for mobile drawer */
+  .sidebarListItemText {
+    display: block !important;
+    font-size: 0.95rem !important;
+    font-weight: 500;
+    color: #333;
+  }
+  [data-theme="dark"] .sidebarListItemText {
+    color: #f1f5f9;
+  }
+  .sidebarSubItemText {
+    display: block !important;
+    font-size: 0.95rem !important;
+    color: #555;
+  }
+  [data-theme="dark"] .sidebarSubItemText {
+    color: #cbd5e1;
+  }
+  .downloadAppBtn {
+    width: 180px !important;
+    font-size: 1rem !important;
   }
 }
 

@@ -119,6 +119,29 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
       open={open}
       onClose={onClose}
       classes={{ paper: styles.sidebarDrawer }}
+      ModalProps={{
+        keepMounted: true, // Better mobile performance
+      }}
+      sx={{
+        // For temporary drawer on mobile
+        ...(variant === 'temporary' && {
+          '& .MuiDrawer-paper': {
+            width: 240,
+            boxSizing: 'border-box',
+            backgroundColor: 'inherit',
+          },
+        }),
+        // For persistent drawer on desktop
+        ...(variant === 'persistent' && {
+          '& .MuiDrawer-paper': {
+            position: 'fixed',
+            top: 64,
+            left: 0,
+            height: 'calc(100vh - 64px)',
+            zIndex: 1200,
+          },
+        }),
+      }}
     >
       <React.Fragment>
         <Box className={styles.sidebarTop}>

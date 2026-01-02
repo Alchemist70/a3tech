@@ -44,13 +44,9 @@ function AppContent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // On mobile, sidebar should start closed
+  // On mobile, sidebar should start closed. Reset on every mount and when isMobile changes.
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    } else {
-      setSidebarOpen(true);
-    }
+    setSidebarOpen(false);
   }, [isMobile]);
 
   // Apply dark background overlay in dark mode
