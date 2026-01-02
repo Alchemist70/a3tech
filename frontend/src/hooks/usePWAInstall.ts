@@ -45,12 +45,14 @@ export function usePWAInstall() {
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    // Use capture phase to ensure we catch these early
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt, true);
+    window.addEventListener('appinstalled', handleAppInstalled, true);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      // Clean up listeners - use same capture flag
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt, true);
+      window.removeEventListener('appinstalled', handleAppInstalled, true);
     };
   }, []);
 

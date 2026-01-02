@@ -40,13 +40,18 @@ import AuthCallback from './pages/AuthCallback';
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobileState, setIsMobileState] = useState(false); // Local state backup
   const { darkMode } = useCustomTheme();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // On mobile, sidebar should start closed. Reset on every mount and when isMobile changes.
+  // Sync isMobile to local state to handle useMediaQuery inconsistencies after multiple refreshes
   useEffect(() => {
-    setSidebarOpen(false);
+    setIsMobileState(isMobile);
+    // Always close sidebar when switching to mobile
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
   }, [isMobile]);
 
   // Apply dark background overlay in dark mode
@@ -65,7 +70,7 @@ function AppContent() {
   }, [darkMode]);
 
   // Determine sidebar variant: temporary on mobile, persistent on larger screens (persistent can be toggled)
-  const sidebarVariant = isMobile ? 'temporary' : 'persistent';
+  const sidebarVariant = isMobileState ? 'temporary' : 'persistent';
 
   return (
     <>
@@ -83,8 +88,8 @@ function AppContent() {
               flexGrow: 1, 
               pl: { 
                 xs: 0, 
-                sm: (sidebarOpen && !isMobile) ? '240px' : 0,
-                md: (sidebarOpen && !isMobile) ? '240px' : 0
+                sm: (sidebarOpen && !isMobileState) ? '240px' : 0,
+                md: (sidebarOpen && !isMobileState) ? '240px' : 0
               }, 
               transition: 'padding-left 0.3s ease', 
               backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.3)' : 'transparent',
