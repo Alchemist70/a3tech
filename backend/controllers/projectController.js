@@ -227,6 +227,23 @@ exports.getProjectByLevel = getProjectByLevel;
 const createProject = async (req, res) => {
         try {
         let projectData = req.body;
+        console.log('[createProject] Received request with body keys:', Object.keys(projectData || {}).join(', '));
+        
+        // IMMEDIATE VALIDATION: Set defaults for required fields BEFORE any processing
+        if (projectData.title === undefined || projectData.title === null) projectData.title = 'Untitled Project';
+        if (projectData.subtitle === undefined || projectData.subtitle === null) projectData.subtitle = 'No subtitle provided';
+        if (projectData.description === undefined || projectData.description === null) projectData.description = 'No description provided';
+        if (projectData.detailedDescription === undefined || projectData.detailedDescription === null) projectData.detailedDescription = projectData.description;
+        if (projectData.category === undefined || projectData.category === null) projectData.category = 'ai-ml';
+        
+        // Trim and validate strings
+        projectData.title = String(projectData.title || '').trim() || 'Untitled Project';
+        projectData.subtitle = String(projectData.subtitle || '').trim() || 'No subtitle provided';
+        projectData.description = String(projectData.description || '').trim() || 'No description provided';
+        projectData.detailedDescription = String(projectData.detailedDescription || '').trim() || projectData.description;
+        
+        console.log('[createProject] After immediate validation:', { title: projectData.title, subtitle: projectData.subtitle, description: projectData.description.substring(0, 50) });
+        
         // Persist the raw parsed body for debugging
         try {
             fs.writeFileSync(path.join(__dirname, 'incoming_body_debug.json'), JSON.stringify(req.body, null, 2));
@@ -446,9 +463,19 @@ const createProject = async (req, res) => {
         }
         if (!projectData.category) {
             projectData.category = 'ai-ml';
+        }        // Ensure educationalContent exists and has default structure
+        if (!projectData.educationalContent || typeof projectData.educationalContent !== 'object') {
+            projectData.educationalContent = {
+                beginner: { overview: '', prerequisites: [], concepts: [], resources: [], quizzes: [] },
+                intermediate: { overview: '', prerequisites: [], concepts: [], resources: [], quizzes: [] },
+                advanced: { overview: '', prerequisites: [], concepts: [], resources: [], quizzes: [] }
+            };
         }
+        console.log('[createProject] Final validated data prepared for save');        console.log('[createProject] Creating project with data:', { title: projectData.title, subtitle: projectData.subtitle, description: projectData.description?.substring(0, 50), detailedDescription: projectData.detailedDescription?.substring(0, 50), category: projectData.category });
         const project = new Project_1.default(projectData);
+        console.log('[createProject] Project instance created, attempting save...');
         await project.save();
+        console.log('[createProject] Project saved successfully with id:', project._id);
         res.status(201).json({
             success: true,
             data: project,
@@ -461,10 +488,14 @@ const createProject = async (req, res) => {
                 } catch (e) { }
     }
     catch (error) {
+        console.error('[createProject] Error caught:', error instanceof Error ? error.message : error);
+        if (error instanceof Error) {
+            console.error('[createProject] Error stack:', error.stack);
+        }
         res.status(400).json({
             success: false,
             message: 'Error creating project',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
     }
 };

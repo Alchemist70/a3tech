@@ -1,5 +1,49 @@
 import { Project } from '../types/Project';
 
+// Map category names to valid backend enum values
+const CATEGORY_MAP: Record<string, string> = {
+  'ai-ml': 'ai-ml',
+  'ai': 'ai-ml',
+  'machine learning': 'ai-ml',
+  'ml': 'ai-ml',
+  'artificial intelligence': 'ai-ml',
+  'federated-learning': 'federated-learning',
+  'federated learning': 'federated-learning',
+  'federated learning and privacy': 'federated-learning',
+  'privacy': 'federated-learning',
+  'biomarker-discovery': 'biomarker-discovery',
+  'biomarker discovery': 'biomarker-discovery',
+  'biomarker': 'biomarker-discovery',
+  'computer-vision': 'computer-vision',
+  'computer vision': 'computer-vision',
+  'vision': 'computer-vision',
+  'cv': 'computer-vision',
+  'security': 'security',
+  'cybersecurity': 'security',
+  'automotive': 'automotive',
+  'vehicles': 'automotive',
+  'self-driving': 'automotive',
+};
+
+function mapCategoryToBackend(category: string): string {
+  if (!category) return 'ai-ml';
+  const normalized = category.toLowerCase().trim();
+  return CATEGORY_MAP[normalized] || 'ai-ml';
+}
+
+function truncateDescription(desc: string, maxLength: number = 500): string {
+  if (!desc) return '';
+  const trimmed = String(desc).trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  // Truncate and try to break at word boundary
+  let truncated = trimmed.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength - 50) {
+    truncated = truncated.substring(0, lastSpace);
+  }
+  return truncated + '...';
+}
+
 export function buildProjectPayload(
   project: Project,
   resourceStrings: Record<'beginner' | 'intermediate' | 'advanced', string>,
@@ -203,7 +247,15 @@ export function buildProjectPayload(
     ...project,
     // send legacy-shaped educationalContent (but preserve rich fields inside it)
     educationalContent: legacyEducationalContent,
-  };
+    // Ensure required fields are never undefined
+    title: project.title && String(project.title).trim() ? String(project.title).trim() : 'Untitled Project',
+    subtitle: project.subtitle && String(project.subtitle).trim() ? String(project.subtitle).trim() : 'No subtitle',
+    // Truncate description to max 500 chars (backend requirement)
+    description: truncateDescription(project.description ? String(project.description).trim() : 'No description', 500),
+    detailedDescription: project.detailedDescription && String(project.detailedDescription).trim() ? String(project.detailedDescription).trim() : (project.description && String(project.description).trim() ? String(project.description).trim() : 'No description'),
+    // Map category to valid backend enum
+    category: mapCategoryToBackend(project.category || ''),
+  } as any;
   delete (payload as any).id;
   return payload;
 }

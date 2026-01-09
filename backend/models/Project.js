@@ -168,7 +168,6 @@ const ProjectSchema = new mongoose_1.Schema({
     demoUrl: String,
     category: {
         type: String,
-        enum: ['ai-ml', 'federated-learning', 'biomarker-discovery', 'computer-vision', 'security', 'automotive'],
         required: true
     },
     tags: [String],

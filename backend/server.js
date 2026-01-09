@@ -157,6 +157,14 @@ app.use((0, cors_1.default)({
 app.use(express_1.default.json({ limit: process.env.JSON_BODY_LIMIT || '20mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: process.env.JSON_BODY_LIMIT || '20mb' }));
 
+// Add debug logging for requests to /api/projects
+app.use('/api/projects', (req, res, next) => {
+    console.log(`[/api/projects] ${req.method} request received`);
+    console.log(`[/api/projects] Content-Type: ${req.headers['content-type']}`);
+    console.log(`[/api/projects] Body size: ${JSON.stringify(req.body).length} bytes`);
+    next();
+});
+
 // Session configuration for Passport
 // Session configuration: use MongoDB when available to persist sessions across restarts
 try {
