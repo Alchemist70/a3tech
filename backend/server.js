@@ -238,9 +238,9 @@ app.use((req, res, next) => {
             // avoid client-side caching so changes made via admin UI appear immediately.
             if (req.path.includes('/waec-sections') || req.path.includes('/jamb-sections') || req.path.includes('/waec-topics') || req.path.includes('/jamb-topics') || req.path.includes('/waec-topic-details') || req.path.includes('/jamb-topic-details') || req.path.includes('/question-bank') || req.path.includes('/mock-test')) {
                 res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-            } else if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/faq') || req.path.includes('/topics')) {
-                // Slightly longer caching for larger read-only collections
-                res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
+            } else if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/topics') || req.path.includes('/knowledge-base')) {
+                // Admin-managed collections must reflect updates immediately — avoid client-side caching
+                res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
             } else if (req.path.includes('/user') || req.path.includes('/auth')) {
                 res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
             } else {

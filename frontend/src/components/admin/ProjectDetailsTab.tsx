@@ -538,6 +538,40 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
       setEditProject({ ...editProject, [name]: value });
     }
   };
+
+  // Upload a file for a concept block (image/diagram/video). Uses /api/uploads which returns a public fileUrl.
+  const handleConceptBlockFileUpload = async (file: File | null, levelKey: Level, conceptIdx: number, blockIdx: number, blockType: string) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const fileUrl = res.data?.data?.fileUrl || res.data?.fileUrl;
+      if (fileUrl) {
+        setEditProject(prev => {
+          if (!prev) return prev;
+          const concepts = Array.isArray(prev.educationalContent[levelKey].concepts) ? [...prev.educationalContent[levelKey].concepts] : [];
+          const desc = Array.isArray(concepts[conceptIdx]?.description) ? [...concepts[conceptIdx].description] : [];
+          desc[blockIdx] = { type: blockType as 'image' | 'video' | 'diagram', url: fileUrl };
+          concepts[conceptIdx] = { ...concepts[conceptIdx], description: desc };
+          return {
+            ...prev,
+            educationalContent: {
+              ...prev.educationalContent,
+              [levelKey]: {
+                ...prev.educationalContent[levelKey],
+                concepts
+              }
+            }
+          } as typeof prev;
+        });
+      }
+    } catch (err) {
+      console.error('Concept image upload failed', err);
+      alert('Failed to upload image');
+    }
+  };
+
   const handleSaveEdit = async () => {
     setMessage(null);
     setError(null);
@@ -1209,6 +1243,26 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                         fullWidth
                                         margin="dense"
                                       />
+                                      {/* File upload input for image/diagram/video */}
+                                      <input
+                                        type="file"
+                                        accept={block.type === 'image' || block.type === 'diagram' ? 'image/*' : 'video/*'}
+                                        onChange={e => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            handleConceptBlockFileUpload(file, level, i, bIdx, block.type);
+                                          }
+                                        }}
+                                        style={{ display: 'none' }}
+                                        id={`upload-${level}-${i}-${bIdx}`}
+                                      />
+                                      <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => document.getElementById(`upload-${level}-${i}-${bIdx}`)?.click()}
+                                      >
+                                        Upload
+                                      </Button>
                                       {/* Preview for image/diagram/video */}
                                       {block.type === 'image' || block.type === 'diagram' ? (
                                         <img src={normalizeImageUrl(block.url) || block.url} alt={block.type} style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
