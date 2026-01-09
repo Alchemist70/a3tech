@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Tabs, Tab, Typography, Paper, TextField, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Avatar, Snackbar } from '@mui/material';
 import api from '../api';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,7 +12,15 @@ import AdminBlogDetail from './admin/AdminBlogDetail';
 import AdminKnowledgeBaseTab from '../components/admin/AdminKnowledgeBaseTab';
 import AdminTopicsTab from '../components/admin/AdminTopicsTab';
 import AdminTopicDetailsTab from '../components/admin/AdminTopicDetailsTab';
+import AdminWaecSectionTab from '../components/admin/AdminWaecSectionTab';
+import AdminWaecTopicsTab from '../components/admin/AdminWaecTopicsTab';
+import AdminWaecTopicDetailsTab from '../components/admin/AdminWaecTopicDetailsTab';
+import AdminJambSectionTab from '../components/admin/AdminJambSectionTab';
+import AdminJambTopicsTab from '../components/admin/AdminJambTopicsTab';
+import AdminJambTopicDetailsTab from '../components/admin/AdminJambTopicDetailsTab';
 import AdminUsersTab from '../components/admin/AdminUsersTab';
+import AdminJambQuestionBankTab from '../components/admin/AdminJambQuestionBankTab';
+import AdminWaecQuestionBankTab from '../components/admin/AdminWaecQuestionBankTab';
 import RichTextEditor from '../components/admin/RichTextEditor';
 import styles from '../components/Sidebar.module.css';
 const tabLabels = [
@@ -27,6 +35,14 @@ const tabLabels = [
   'Knowledge Base',
   'Topics',
   'Topic Details',
+  'WAEC Sections',
+  'WAEC Topics',
+  'WAEC Topic Details',
+  'JAMB Sections',
+  'JAMB Topics',
+  'JAMB Topic Details',
+  'JAMB Question Bank',
+  'WAEC Question Bank',
   'Users',
 ];
 
@@ -526,7 +542,17 @@ const Admin: React.FC = () => {
       setProjectsError(null);
       api.get('/projects')
         .then(res => {
-          let data = Array.isArray(res.data?.data) ? res.data.data : initialProjects;
+          // Accept multiple response shapes: { projects: [...] } or { data: [...] } or array directly
+          let data: any[] = [];
+          if (Array.isArray(res.data?.projects)) {
+            data = res.data.projects;
+          } else if (Array.isArray(res.data?.data)) {
+            data = res.data.data;
+          } else if (Array.isArray(res.data)) {
+            data = res.data;
+          } else {
+            data = initialProjects;
+          }
           // Always map id for frontend
           data = data.map((proj: any) => ({ ...proj, id: proj._id || proj.id }));
           setProjects(data);
@@ -544,7 +570,16 @@ const Admin: React.FC = () => {
       setBlogsError(null);
       api.get('/blog')
         .then(res => {
-          let data = Array.isArray(res.data?.data) ? res.data.data : initialBlogs;
+          let data: any[] = [];
+          if (Array.isArray(res.data?.data)) {
+            data = res.data.data;
+          } else if (Array.isArray(res.data?.blogs)) {
+            data = res.data.blogs;
+          } else if (Array.isArray(res.data)) {
+            data = res.data;
+          } else {
+            data = initialBlogs;
+          }
           // Always map id for frontend and ensure uuid exists for linking
           data = data.map((blog: any) => {
             const b = { ...blog, id: blog._id || blog.id };
@@ -552,6 +587,7 @@ const Admin: React.FC = () => {
             return b;
           });
           setBlogs(data);
+          setBlogsLoading(false);
         })
         .catch(() => {
           setBlogs(initialBlogs);
@@ -643,7 +679,14 @@ const Admin: React.FC = () => {
             ids = projects.map((p: any) => p._id || p.id).filter(Boolean);
           } else {
             const listRes = await api.get('/projects');
-            const listData = Array.isArray(listRes.data?.data) ? listRes.data.data : [];
+            let listData: any[] = [];
+            if (Array.isArray(listRes.data?.projects)) {
+              listData = listRes.data.projects;
+            } else if (Array.isArray(listRes.data?.data)) {
+              listData = listRes.data.data;
+            } else if (Array.isArray(listRes.data)) {
+              listData = listRes.data;
+            }
             ids = listData.map((p: any) => p._id || p.id).filter(Boolean);
           }
           // Fetch full details in parallel but limit to reasonable number to avoid overloading server
@@ -1163,10 +1206,32 @@ const Admin: React.FC = () => {
     }
   };
 
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const tabsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const updateHeights = () => {
+      const appBar = document.querySelector('.MuiAppBar-root') as HTMLElement | null;
+      const appBarH = appBar ? appBar.getBoundingClientRect().height : 64;
+      const headerH = headerRef.current ? headerRef.current.getBoundingClientRect().height : 48;
+      const tabsH = tabsRef.current ? tabsRef.current.getBoundingClientRect().height : 48;
+      document.documentElement.style.setProperty('--appbar-height', `${appBarH}px`);
+      document.documentElement.style.setProperty('--admin-header-height', `${headerH}px`);
+      document.documentElement.style.setProperty('--admin-tabs-height', `${tabsH}px`);
+    };
+    updateHeights();
+    window.addEventListener('resize', updateHeights);
+    // observe mutations that might change header/tabs height
+    const ro = new ResizeObserver(updateHeights);
+    if (headerRef.current) ro.observe(headerRef.current);
+    if (tabsRef.current) ro.observe(tabsRef.current);
+    return () => { window.removeEventListener('resize', updateHeights); ro.disconnect(); };
+  }, []);
+
   // Simple editable forms for each section
   return (
     <Paper sx={{ width: '100%', minHeight: '80vh', mt: 4, p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, position: 'static', zIndex: 1200, background: (theme) => theme.palette.background.paper, pt: 1, pb: 1 }}>
         <Box>
           <Snackbar
             open={!!successMessage}
@@ -1179,7 +1244,7 @@ const Admin: React.FC = () => {
             </Alert>
           </Snackbar>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Box ref={headerRef} sx={{ display: 'flex', gap: 2, alignItems: 'center', position: 'fixed', left: 0, right: 0, top: 'var(--appbar-height, 64px)', zIndex: 1200, background: (theme) => theme.palette.background.paper, px: 2, py: 1 }}>
           {adminUserState && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
@@ -1194,12 +1259,13 @@ const Admin: React.FC = () => {
         </Box>
       </Box>
       <Tabs
+        ref={tabsRef}
         value={tab}
         onChange={handleTabChange}
         aria-label="Admin Tabs"
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ backgroundColor: '#fff', borderRadius: 2, boxShadow: 1 }}
+        sx={{ backgroundColor: '#fff', borderRadius: 2, boxShadow: 1, position: 'fixed', left: 0, right: 0, top: 'calc(var(--appbar-height, 64px) + var(--admin-header-height, 48px))', zIndex: 1199 }}
         TabIndicatorProps={{ style: { background: '#1976d2' } }}
       >
         {tabLabels.map((label, idx) => (
@@ -1222,6 +1288,9 @@ const Admin: React.FC = () => {
           />
         ))}
       </Tabs>
+
+      {/* spacer so page content isn't hidden behind the fixed header/tabs */}
+      <div style={{ height: 'calc(var(--appbar-height, 64px) + var(--admin-header-height, 48px) + var(--admin-tabs-height, 48px))' }} />
       <TabPanel value={tab} index={0}>
         <Typography variant="h6">Edit Projects</Typography>
         {projectsLoading && <CircularProgress sx={{ my: 2 }} />}
@@ -1585,7 +1654,7 @@ const Admin: React.FC = () => {
                 setBlogEditBuffer({ ...blogEditBuffer, [blog.id || idx]: { ...buffer, excerpt: e.target.value } });
               }} sx={{ mb: 1 }} InputProps={{ readOnly: !isEditing }} />
               <Box sx={{ mb: 1 }}>
-                <RichTextEditor value={buffer.content || ''} onChange={v => {
+                <RichTextEditor value={buffer.content || ''} onChange={(v: string) => {
                   if (!isEditing) return;
                   setBlogEditBuffer({ ...blogEditBuffer, [blog.id || idx]: { ...buffer, content: v } });
                 }} readOnly={!isEditing} />
@@ -2396,6 +2465,30 @@ const Admin: React.FC = () => {
         <AdminTopicDetailsTab />
       </TabPanel>
       <TabPanel value={tab} index={11}>
+        <AdminWaecSectionTab />
+      </TabPanel>
+      <TabPanel value={tab} index={12}>
+        <AdminWaecTopicsTab />
+      </TabPanel>
+      <TabPanel value={tab} index={13}>
+        <AdminWaecTopicDetailsTab />
+      </TabPanel>
+      <TabPanel value={tab} index={14}>
+        <AdminJambSectionTab />
+      </TabPanel>
+      <TabPanel value={tab} index={15}>
+        <AdminJambTopicsTab />
+      </TabPanel>
+      <TabPanel value={tab} index={16}>
+        <AdminJambTopicDetailsTab />
+      </TabPanel>
+      <TabPanel value={tab} index={17}>
+        <AdminJambQuestionBankTab />
+      </TabPanel>
+      <TabPanel value={tab} index={18}>
+        <AdminWaecQuestionBankTab />
+      </TabPanel>
+      <TabPanel value={tab} index={19}>
         <AdminUsersTab />
       </TabPanel>
     </Paper>

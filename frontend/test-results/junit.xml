@@ -1,0 +1,51 @@
+<testsuites id="" name="" tests="13" failures="0" skipped="0" errors="0" time="72.017633">
+<testsuite name="proctoring-smoke.spec.ts" timestamp="2026-01-07T06:46:22.566Z" hostname="chromium" tests="13" failures="0" skipped="0" time="66.09" errors="0">
+<testcase name="Exam Proctoring - Basic Smoke Tests › should load frontend application successfully" classname="proctoring-smoke.spec.ts" time="5.175">
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should not have critical TypeScript errors in console" classname="proctoring-smoke.spec.ts" time="6.835">
+<system-out>
+<![CDATA[Critical Errors: []
+]]>
+</system-out>
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should load ProctorConfig without errors" classname="proctoring-smoke.spec.ts" time="3.472">
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should handle network monitoring setup" classname="proctoring-smoke.spec.ts" time="5.319">
+<system-out>
+<![CDATA[Network Events: []
+]]>
+</system-out>
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should detect browser type correctly" classname="proctoring-smoke.spec.ts" time="0.305">
+<system-out>
+<![CDATA[Browser detected as: chromium
+User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36
+]]>
+</system-out>
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should load within acceptable time" classname="proctoring-smoke.spec.ts" time="3.513">
+<system-out>
+<![CDATA[Page loaded in 3008.88ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should initialize SafeExamMode context" classname="proctoring-smoke.spec.ts" time="3.71">
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should handle WebcamProctor initialization" classname="proctoring-smoke.spec.ts" time="7.532">
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should handle NetworkMonitor setup without errors" classname="proctoring-smoke.spec.ts" time="7.16">
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should verify backend API is reachable" classname="proctoring-smoke.spec.ts" time="3.667">
+<system-out>
+<![CDATA[Backend health check returned: 200
+]]>
+</system-out>
+</testcase>
+<testcase name="Exam Proctoring - Basic Smoke Tests › should verify PreflightChecks component can mount" classname="proctoring-smoke.spec.ts" time="6.498">
+</testcase>
+<testcase name="Exam Proctoring - Mobile Responsiveness › should be accessible on mobile viewport" classname="proctoring-smoke.spec.ts" time="4.967">
+</testcase>
+<testcase name="Exam Proctoring - Mobile Responsiveness › should be accessible on tablet viewport" classname="proctoring-smoke.spec.ts" time="7.937">
+</testcase>
+</testsuite>
+</testsuites>

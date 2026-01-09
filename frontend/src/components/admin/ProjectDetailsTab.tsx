@@ -95,9 +95,9 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
       const prereqObj = {} as Record<Level, string>;
       const resourceObj = {} as Record<Level, string>;
       levels.forEach(l => {
-        prereqObj[l] = Array.isArray(firstEC[l].prerequisites)
-          ? firstEC[l].prerequisites.join(', ') : '';
-        resourceObj[l] = arrayToResourceString(firstEC[l].resources);
+        const lvlEC = (firstEC && (firstEC as any)[l]) ? (firstEC as any)[l] : emptyProject.educationalContent[l];
+        prereqObj[l] = Array.isArray(lvlEC.prerequisites) ? lvlEC.prerequisites.join(', ') : '';
+        resourceObj[l] = arrayToResourceString(lvlEC.resources || []);
       });
       setPrereqStrings(prereqObj);
       setResourceStrings(resourceObj);
@@ -108,11 +108,11 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
       const editPrereqObj = {} as Record<Level, string>;
       const editEC = editProject.educationalContent || emptyProject.educationalContent;
       levels.forEach(l => {
-        editResourceObj[l] = arrayToResourceString(editEC[l].resources);
-        editPrereqObj[l] = Array.isArray(editEC[l].prerequisites)
-          ? editEC[l].prerequisites.join(', ') : '';
+        const lvlEdit = (editEC && (editEC as any)[l]) ? (editEC as any)[l] : emptyProject.educationalContent[l];
+        editResourceObj[l] = arrayToResourceString(lvlEdit.resources || []);
+        editPrereqObj[l] = Array.isArray(lvlEdit.prerequisites) ? lvlEdit.prerequisites.join(', ') : '';
         // Ensure concepts array exists and is not undefined/null on the editProject object
-        if (!Array.isArray(editEC[l].concepts)) {
+        if (!Array.isArray(lvlEdit.concepts)) {
           editProject.educationalContent = {
             ...(editProject.educationalContent || {}),
             [l]: {
@@ -126,7 +126,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
             ...(editProject.educationalContent || {}),
             [l]: {
               ...(editProject.educationalContent?.[l] || emptyProject.educationalContent[l]),
-              concepts: editEC[l].concepts.map((c: any) => {
+              concepts: lvlEdit.concepts.map((c: any) => {
                 if (!Array.isArray(c.description)) {
                   if (typeof c.description === 'string') return { ...c, description: [{ type: 'text', content: c.description }] };
                   return { ...c, description: [] };
@@ -146,13 +146,21 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     levels.forEach(l => { obj[l] = ''; });
     return obj;
   });
+
+  // Helper to safely get an educationalContent level for the editProject
+  const getEditLevel = (level: Level) => {
+    if (!editProject) return emptyProject.educationalContent[level];
+    const ec = (editProject.educationalContent && (editProject.educationalContent as any)[level]) ? (editProject.educationalContent as any)[level] : null;
+    return ec || emptyProject.educationalContent[level];
+  };
   useEffect(() => {
     if (editProject) {
       const resObj = {} as Record<Level, string>;
       const quizObj = {} as Record<Level, string>;
       levels.forEach(l => {
-        resObj[l] = arrayToResourceString(editProject.educationalContent[l as Level].resources);
-        quizObj[l] = arrayToQuizString(editProject.educationalContent[l as Level].quizzes);
+        const lvl = (editProject.educationalContent && (editProject.educationalContent as any)[l]) ? (editProject.educationalContent as any)[l] : emptyProject.educationalContent[l];
+        resObj[l] = arrayToResourceString(lvl.resources || []);
+        quizObj[l] = arrayToQuizString(lvl.quizzes || []);
       });
       setEditResourceStrings(resObj);
       setEditQuizStrings(quizObj);
@@ -336,16 +344,18 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
   // --- Interactive quiz editor helpers for Edit form ---
   const syncQuizStringsFromEdit = (level: Level) => {
     if (!editProject) return;
-    const arr = (editProject.educationalContent[level].quizzes || []) as any[];
+    const lvl = getEditLevel(level);
+    const arr = (lvl.quizzes || []) as any[];
     setEditQuizStrings(prev => ({ ...prev, [level]: arrayToQuizString(arr) }));
   };
   const addQuizToEdit = (level: Level) => {
     if (!editProject) return;
     setEditProject(prev => {
       if (!prev) return prev;
-      const quizzes = Array.isArray(prev.educationalContent[level].quizzes) ? [...prev.educationalContent[level].quizzes] : [];
+      const lvl = (prev.educationalContent && (prev.educationalContent as any)[level]) ? (prev.educationalContent as any)[level] : emptyProject.educationalContent[level];
+      const quizzes = Array.isArray(lvl.quizzes) ? [...lvl.quizzes] : [];
       quizzes.push({ question: '', options: [], answer: 0, explanations: [] });
-      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...prev.educationalContent[level], quizzes } } } as Project;
+      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...(prev.educationalContent?.[level] || emptyProject.educationalContent[level]), quizzes } } } as Project;
     });
     setTimeout(() => syncQuizStringsFromEdit(level), 0);
   };
@@ -353,9 +363,10 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     if (!editProject) return;
     setEditProject(prev => {
       if (!prev) return prev;
-      const quizzes = Array.isArray(prev.educationalContent[level].quizzes) ? [...prev.educationalContent[level].quizzes] : [];
+      const lvl = (prev.educationalContent && (prev.educationalContent as any)[level]) ? (prev.educationalContent as any)[level] : emptyProject.educationalContent[level];
+      const quizzes = Array.isArray(lvl.quizzes) ? [...lvl.quizzes] : [];
       quizzes[idx] = updater(quizzes[idx] || { question: '', options: [], answer: 0, explanations: [] });
-      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...prev.educationalContent[level], quizzes } } } as Project;
+      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...(prev.educationalContent?.[level] || emptyProject.educationalContent[level]), quizzes } } } as Project;
     });
     setTimeout(() => syncQuizStringsFromEdit(level), 0);
   };
@@ -363,9 +374,10 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     if (!editProject) return;
     setEditProject(prev => {
       if (!prev) return prev;
-      const quizzes = Array.isArray(prev.educationalContent[level].quizzes) ? [...prev.educationalContent[level].quizzes] : [];
+      const lvlPrev = (prev.educationalContent && (prev.educationalContent as any)[level]) ? (prev.educationalContent as any)[level] : emptyProject.educationalContent[level];
+      const quizzes = Array.isArray(lvlPrev.quizzes) ? [...lvlPrev.quizzes] : [];
       quizzes.splice(idx, 1);
-      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...prev.educationalContent[level], quizzes } } } as Project;
+      return { ...prev, educationalContent: { ...prev.educationalContent, [level]: { ...(prev.educationalContent?.[level] || emptyProject.educationalContent[level]), quizzes } } } as Project;
     });
     setTimeout(() => syncQuizStringsFromEdit(level), 0);
   };
@@ -995,7 +1007,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                   {levels.map((level: Level) => (
                     <Paper key={level} elevation={1} sx={{ mb: 2, p: 2, borderRadius: 2, background: 'var(--card)' }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: 700, textTransform: 'capitalize', mb: 1 }}>{level} Overview</Typography>
-                      <TextField label={`${level.charAt(0).toUpperCase() + level.slice(1)} Overview`} name={`educationalContent.${level}.overview`} value={editProject.educationalContent[level].overview} onChange={handleEditChange} onFocus={handleFocus} fullWidth margin="dense" multiline minRows={2} />
+                      <TextField label={`${level.charAt(0).toUpperCase() + level.slice(1)} Overview`} name={`educationalContent.${level}.overview`} value={getEditLevel(level).overview} onChange={handleEditChange} onFocus={handleFocus} fullWidth margin="dense" multiline minRows={2} />
                       <TextField
                         label="Prerequisites (comma separated)"
                         name={`educationalContent.${level}.prerequisites`}
@@ -1009,7 +1021,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                       />
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Concepts</Typography>
-                        {Array.isArray(editProject.educationalContent[level].concepts) && editProject.educationalContent[level].concepts.map((concept, i) => (
+                        {Array.isArray(getEditLevel(level).concepts) && getEditLevel(level).concepts.map((concept: any, i: number) => (
                           <Paper key={i} elevation={0} sx={{ mb: 1, p: 1, borderRadius: 1, background: 'var(--surface)' }}>
                             <TextField label="Title" name={`educationalContent.${level}.concepts.${i}.title`} value={concept.title} onChange={handleEditChange} onFocus={handleFocus} fullWidth margin="dense" />
                             {/* Block-based editor for concept.description (ConceptBlock[]) */}
@@ -1025,7 +1037,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                         const value = e.target.value;
                                         setEditProject(prev => {
                                           if (!prev) return prev;
-                                          const concepts = Array.isArray(prev.educationalContent[level].concepts) ? [...prev.educationalContent[level].concepts] : [];
+                                          const concepts = Array.isArray((prev.educationalContent && (prev.educationalContent as any)[level] && prev.educationalContent[level].concepts) ? prev.educationalContent[level].concepts : []) ? [...(prev.educationalContent[level].concepts || [])] : [];
                                           const desc = Array.isArray(concepts[i]?.description) ? [...concepts[i].description] : [];
                                           desc[bIdx] = { type: 'text', content: value };
                                           concepts[i] = { ...concepts[i], description: desc };
@@ -1212,7 +1224,8 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                 <Button variant="outlined" size="small" onClick={() => {
                                   setEditProject(prev => {
                                     if (!prev) return prev;
-                                    const concepts = [...prev.educationalContent[level].concepts];
+                                    const prevLvl = (prev.educationalContent && (prev.educationalContent as any)[level]) ? (prev.educationalContent as any)[level] : emptyProject.educationalContent[level];
+                                    const concepts = Array.isArray(prevLvl.concepts) ? [...prevLvl.concepts] : [];
                                     const desc = Array.isArray(concepts[i].description) ? [...concepts[i].description] : [];
                                     desc.push({ type: 'video', url: '' });
                                     concepts[i] = { ...concepts[i], description: desc };
@@ -1221,7 +1234,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                       educationalContent: {
                                         ...prev.educationalContent,
                                         [level]: {
-                                          ...prev.educationalContent[level],
+                                          ...(prev.educationalContent?.[level] || emptyProject.educationalContent[level]),
                                           concepts
                                         }
                                       }
@@ -1233,18 +1246,21 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                           </Paper>
                         ))}
                         <Button variant="outlined" size="small" sx={{ mt: 1 }} onClick={() => {
-                          setEditProject({
-                            ...editProject,
-                            educationalContent: {
-                              ...editProject.educationalContent,
-                              [level]: {
-                                ...editProject.educationalContent[level],
-                                concepts: [
-                                  ...editProject.educationalContent[level].concepts,
-                                  { title: '', description: [], images: [], videos: [], diagrams: [] }
-                                ]
+                          setEditProject(prev => {
+                            if (!prev) return prev;
+                            const lvlPrev = (prev.educationalContent && (prev.educationalContent as any)[level]) ? (prev.educationalContent as any)[level] : emptyProject.educationalContent[level];
+                            const concepts = Array.isArray(lvlPrev.concepts) ? [...lvlPrev.concepts] : [];
+                            concepts.push({ title: '', description: [], images: [], videos: [], diagrams: [] });
+                            return {
+                              ...prev,
+                              educationalContent: {
+                                ...prev.educationalContent,
+                                [level]: {
+                                  ...(prev.educationalContent?.[level] || emptyProject.educationalContent[level]),
+                                  concepts
+                                }
                               }
-                            }
+                            };
                           });
                         }}>Add Concept</Button>
                       </Box>
@@ -1256,7 +1272,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                       <Box sx={{ mt: 1, mb: 1 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Structured Quizzes (optional)</Typography>
                         <Button variant="outlined" size="small" sx={{ mt: 1, mb: 1 }} onClick={() => addQuizToEdit(level)}>Add Quiz (structured)</Button>
-                        {(editProject && Array.isArray(editProject.educationalContent[level].quizzes) ? editProject.educationalContent[level].quizzes : []).map((q: any, qi: number) => (
+                        {(editProject && Array.isArray(getEditLevel(level).quizzes) ? getEditLevel(level).quizzes : []).map((q: any, qi: number) => (
                           <Paper key={qi} elevation={0} sx={{ p: 1, mb: 1, background: '#fff', border: '1px solid #eee' }}>
                             <Grid container spacing={1} alignItems="center">
                               <Grid item xs={12} md={8}>

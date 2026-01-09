@@ -21,6 +21,8 @@ import ResearchGraph from '../components/ResearchGraph';
 import { useInView } from 'react-intersection-observer';
 import { useVisitTracker } from '../hooks/useVisitTracker';
 import api from '../api';
+import { useAuth } from '../contexts/AuthContext';
+import HighSchoolHome from './HighSchoolHome';
 
 
 
@@ -53,6 +55,7 @@ const Home: React.FC = () => {
   const heroBg = `linear-gradient(90deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`;
   const overlayBg = alpha(theme.palette.background.paper, 0.7);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -60,6 +63,17 @@ const Home: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [featuredProjects, setFeaturedProjects] = useState<any[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+
+  // Fallback to localStorage in case auth context isn't updated yet (avoid race on redirect)
+  let effectiveUser = user;
+  if (!effectiveUser) {
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) effectiveUser = JSON.parse(raw);
+    } catch (e) {
+      // ignore parse errors
+    }
+  }
 
   // Track page visit
   useVisitTracker();
@@ -112,6 +126,11 @@ const Home: React.FC = () => {
     fetchProjects();
     return () => { mounted = false; };
   }, []);
+
+  // If user is a high-school user, show the dedicated High School home page
+  if (effectiveUser?.educationLevel === 'high-school') {
+    return <HighSchoolHome />;
+  }
 
   return (
     <Box sx={{ background: theme.palette.background.default, minHeight: '100vh' }}>

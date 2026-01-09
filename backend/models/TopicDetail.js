@@ -11,11 +11,44 @@ const ResourceSchema = new mongoose.Schema({
   type: { type: String, enum: ['video', 'article', 'code'], default: 'article' }
 }, { _id: false });
 
+const TableSchema = new mongoose.Schema({
+  title: String,
+  headers: [String],
+  rows: [[String]],
+  description: String,
+  rowExplanations: [String],
+}, { _id: false });
+
+const ChartSchema = new mongoose.Schema({
+  title: String,
+  type: { type: String, enum: ['bar', 'pie', 'histogram', 'line'], default: 'bar' },
+  labels: [String],
+  labelExplanations: [String],
+  labelFormat: { type: String, enum: ['percentage', 'degrees'], default: 'percentage' },
+  datasets: [{
+    label: String,
+    data: [Number],
+    backgroundColor: mongoose.Schema.Types.Mixed,
+    borderColor: mongoose.Schema.Types.Mixed,
+  }],
+  description: String,
+}, { _id: false });
+
+const ImageSchema = new mongoose.Schema({
+  type: { type: String, enum: ['url', 'blob'], default: 'url' },
+  data: mongoose.Schema.Types.Mixed,
+  mimeType: String,
+  size: Number,
+}, { _id: false });
+
 const QuizSchema = new mongoose.Schema({
   question: String,
   options: [String],
   answer: Number,
-  explanations: [String]
+  explanations: [String],
+  tables: [TableSchema],
+  charts: [ChartSchema],
+  images: [ImageSchema],
 }, { _id: false });
 
 const ContentBlockSchema = new mongoose.Schema({

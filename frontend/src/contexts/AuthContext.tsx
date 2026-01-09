@@ -24,7 +24,7 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, secretCode?: string) => Promise<void>;
+  login: (email: string, password: string, secretCode?: string) => Promise<User>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   updateUser: (userData: User) => void;
@@ -140,7 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => { mounted = false; };
   }, []);
 
-  const login = async (email: string, password: string, secretCode?: string) => {
+  const login = async (email: string, password: string, secretCode?: string): Promise<User> => {
     const res = await api.post('/auth/login', { email, password, secretCode });
     const newToken = res.data?.token;
     let userData = res.data?.data;
@@ -164,6 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Persist user and update context
       try { localStorage.setItem('user', JSON.stringify(userData)); } catch (e) {}
       setUser(userData);
+      return userData;
     } else {
       throw new Error('Invalid login response');
     }

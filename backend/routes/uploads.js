@@ -47,4 +47,39 @@ router.post('/profile-picture', upload.single('file'), (req, res) => {
   }
 });
 
+// POST /api/uploads/image-blob - Upload image and return as BLOB for database storage
+// This endpoint reads the uploaded file and returns it as base64-encoded BLOB data
+router.post('/image-blob', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    
+    // Read the file and convert to base64
+    const filePath = req.file.path;
+    const fileData = fs.readFileSync(filePath);
+    const base64Data = fileData.toString('base64');
+    
+    // Determine mime type from file extension or Content-Type header
+    const mimeType = req.file.mimetype || 'application/octet-stream';
+    
+    // Return BLOB data (as base64 string for JSON transfer)
+    res.json({
+      success: true,
+      data: {
+        type: 'blob',
+        data: base64Data,
+        mimeType: mimeType,
+        size: req.file.size,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+      }
+    });
+    
+    // Clean up the uploaded file from disk (since we're storing in DB as BLOB)
+    fs.unlinkSync(filePath);
+  } catch (err) {
+    console.error('image-blob upload error', err);
+    return res.status(500).json({ success: false, error: 'Upload failed', message: err.message || err });
+  }
+});
+
 module.exports = router;

@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api';
 import { CircularProgress, Box, Typography } from '@mui/material';
+import { getRedirectPathByEducationLevel } from '../utils/redirectUtils';
 
 /**
  * AuthCallback component handles Google OAuth callback
@@ -48,20 +49,23 @@ const AuthCallback: React.FC = () => {
             const profile = res.data.data;
             try { localStorage.setItem('user', JSON.stringify(profile)); } catch (e) {}
             if (updateUser) updateUser(profile as any);
+            
+            // Navigate to appropriate page based on education level (replace history)
+            const redirectPath = getRedirectPathByEducationLevel(profile?.educationLevel);
+            navigate(redirectPath, { replace: true });
           } else {
             // fallback: store minimal user data
             try { localStorage.setItem('user', JSON.stringify(userData)); } catch (e) {}
             if (updateUser) updateUser(userData as any);
+            navigate('/', { replace: true });
           }
         } catch (err) {
           // On failure, fallback to minimal user payload but keep token
           console.warn('[AuthCallback] Failed to fetch profile after OAuth:', err);
           try { localStorage.setItem('user', JSON.stringify(userData)); } catch (e) {}
           if (updateUser) updateUser(userData as any);
+          navigate('/', { replace: true });
         }
-
-        // Navigate to home
-        navigate('/');
       } catch (error) {
         console.error('OAuth callback error:', error);
         navigate('/login?error=callback_failed');

@@ -8,11 +8,13 @@ import ScienceIcon from '@mui/icons-material/Science';
 import DownloadIcon from '@mui/icons-material/Download';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import SchoolIcon from '@mui/icons-material/School';
 import Collapse from '@mui/material/Collapse';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import api from '../api';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { useAuth } from '../contexts/AuthContext';
 
 // Removed: knowledgeBaseSubjects (now dynamic)
 
@@ -31,7 +33,25 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
   const [openKbDropdown, setOpenKbDropdown] = React.useState(false);
   const [subjects, setSubjects] = React.useState<Subject[]>([]);
   const [researchAreas, setResearchAreas] = React.useState<any[]>([]);
+  const [waecSections, setWaecSections] = React.useState<Subject[]>([]);
+  const [jambSections, setJambSections] = React.useState<Subject[]>([]);
   const { canInstall, installApp, isInstalled } = usePWAInstall();
+  const { user } = useAuth();
+  
+  // Fallback to localStorage in case auth context isn't updated yet
+  let effectiveUser = user;
+  if (!effectiveUser) {
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) effectiveUser = JSON.parse(raw);
+    } catch (e) {
+      // ignore parse errors
+    }
+  }
+  
+  const isHighSchoolUser = effectiveUser?.educationLevel === 'high-school';
+  const [openWaecDropdown, setOpenWaecDropdown] = React.useState(false);
+  const [openJambDropdown, setOpenJambDropdown] = React.useState(false);
 
   // Fetch research areas from backend so the public sidebar is driven by admin-managed content
   React.useEffect(() => {
@@ -52,7 +72,6 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
             return { ...d, title: d.title || d.name || '', order: typeof d.order === 'number' ? d.order : undefined };
           })
           .filter((a: any) => a.title);
-
         // Sort strategy:
         // - Items with an explicit numeric `order` come first (ascending)
         // - Items without `order` are sorted alphabetically by title (case-insensitive)
@@ -93,6 +112,34 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
     fetchSubjects();
   }, []);
 
+  React.useEffect(() => {
+    const fetchWaecSections = async () => {
+      try {
+        const res = await api.get('/waec-sections', { withCredentials: true });
+        const data = res.data;
+        const sections = Array.isArray(data) ? data : (data?.data || []);
+        setWaecSections(sections);
+      } catch {
+        setWaecSections([]);
+      }
+    };
+    fetchWaecSections();
+  }, []);
+
+  React.useEffect(() => {
+    const fetchJambSections = async () => {
+      try {
+        const res = await api.get('/jamb-sections', { withCredentials: true });
+        const data = res.data;
+        const sections = Array.isArray(data) ? data : (data?.data || []);
+        setJambSections(sections);
+      } catch {
+        setJambSections([]);
+      }
+    };
+    fetchJambSections();
+  }, []);
+
   const handleKbDropdownClick = () => {
     setOpenKbDropdown((prev) => !prev);
   };
@@ -104,6 +151,20 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
     }
   };
 
+  const handleWaecSectionClick = (section: Subject) => {
+    if (section.slug) {
+      navigate(`/waec/${section.slug}`);
+      setOpenWaecDropdown(false);
+    }
+  };
+
+  const handleJambSectionClick = (section: Subject) => {
+    if (section.slug) {
+      navigate(`/jamb/${section.slug}`);
+      setOpenJambDropdown(false);
+    }
+  };
+
   const handleDropdownClick = () => {
     setOpenDropdown((prev) => !prev);
   };
@@ -111,6 +172,14 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
   const handleResearchAreaClick = (area: string) => {
     const keyword = area.toLowerCase().replace(/\s+/g, '-');
     navigate(`/projects?category=${encodeURIComponent(keyword)}`);
+  };
+
+  const handleWaecDropdownClick = () => {
+    setOpenWaecDropdown((prev) => !prev);
+  };
+
+  const handleJambDropdownClick = () => {
+    setOpenJambDropdown((prev) => !prev);
   };
 
   return (
@@ -160,106 +229,208 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
           )}
         </Box>
         <List>
-          <ListItem
-            button
-            onClick={handleKbDropdownClick}
-            selected={location.pathname.startsWith('/knowledge-base') || openKbDropdown}
-          >
-            <ListItemIcon><MenuBookIcon /></ListItemIcon>
-            <ListItemText primary="Knowledge Base" className={styles.sidebarListItemText} />
-            <ExpandMoreIcon
-              style={{
-                transform: openKbDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: '0.2s'
-              }}
-            />
-          </ListItem>
-          <Collapse in={openKbDropdown} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              {subjects.map((subject) => (
-                <ListItem
-                  button
-                  key={subject.slug || subject._id || subject.id}
-                  sx={{ pl: 4 }}
-                  onClick={() => handleKbSubjectClick(subject)}
-                >
-                  <ListItemText
-                    primary={subject.name}
-                    className={styles.sidebarSubItemText}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Collapse>
-          <ListItem
-            button
-            component={Link}
-            to="/"
-            selected={location.pathname === '/'}
-          >
-            <ListItemIcon><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Home" className={styles.sidebarListItemText} />
-          </ListItem>
-          <ListItem
-            button
-            component={Link}
-            to="/projects"
-            selected={location.pathname.startsWith('/projects')}
-          >
-            <ListItemIcon><FolderIcon /></ListItemIcon>
-            <ListItemText primary="Projects" className={styles.sidebarListItemText} />
-          </ListItem>
-          <ListItem
-            button
-            component={Link}
-            to="/blog"
-            selected={location.pathname.startsWith('/blog')}
-          >
-            <ListItemIcon><BookIcon /></ListItemIcon>
-            <ListItemText primary="Blog" className={styles.sidebarListItemText} />
-          </ListItem>
-          {/* Bookmarks removed from sidebar per request */}
-          <ListItem
-            button
-            component={Link}
-            to="/faq"
-            selected={location.pathname.startsWith('/faq')}
-          >
-            <ListItemIcon><HelpIcon /></ListItemIcon>
-            <ListItemText primary="FAQS" className={styles.sidebarListItemText} />
-          </ListItem>
-          <ListItem
-            button
-            onClick={handleDropdownClick}
-            selected={openDropdown}
-          >
-            <ListItemIcon><ScienceIcon /></ListItemIcon>
-            <ListItemText primary="Research Areas" className={styles.sidebarListItemText} />
-            <ExpandMoreIcon
-              style={{
-                transform: openDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: '0.2s'
-              }}
-            />
-          </ListItem>
-          <Collapse in={openDropdown} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding aria-label="Research areas (ordered by site admin)">
-              <span className={styles.visuallyHidden}>Research areas ordered by site admin</span>
-              {researchAreas.map((area: any) => (
-                <ListItem
-                  button
-                  key={area._id || area.title}
-                  sx={{ pl: 4 }}
-                  onClick={() => handleResearchAreaClick(area.title)}
-                >
-                  <ListItemText
-                    primary={area.title}
-                    className={styles.sidebarSubItemText}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Collapse>
+          {isHighSchoolUser ? (
+            // Simplified sidebar for High School users: WAEC, JAMB, FAQS
+            <>
+              <ListItem
+                button
+                onClick={handleWaecDropdownClick}
+                selected={location.pathname.startsWith('/waec') || openWaecDropdown}
+              >
+                <ListItemIcon><SchoolIcon /></ListItemIcon>
+                <ListItemText primary="WAEC" className={styles.sidebarListItemText} />
+                <ExpandMoreIcon
+                  style={{
+                    transform: openWaecDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: '0.2s'
+                  }}
+                />
+              </ListItem>
+              <Collapse in={openWaecDropdown} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {waecSections.length > 0 ? (
+                    waecSections.map((section) => (
+                      <ListItem
+                        button
+                        key={section.slug || section._id || section.id}
+                        sx={{ pl: 4 }}
+                        onClick={() => handleWaecSectionClick(section)}
+                      >
+                        <ListItemText
+                          primary={section.name}
+                          className={styles.sidebarSubItemText}
+                        />
+                      </ListItem>
+                    ))
+                  ) : (
+                    <ListItem sx={{ pl: 4 }}>
+                      <ListItemText
+                        primary="No subjects yet"
+                        className={styles.sidebarSubItemText}
+                        primaryTypographyProps={{ sx: { opacity: 0.6 } }}
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Collapse>
+
+              <ListItem
+                button
+                onClick={handleJambDropdownClick}
+                selected={location.pathname.startsWith('/jamb') || openJambDropdown}
+              >
+                <ListItemIcon><SchoolIcon /></ListItemIcon>
+                <ListItemText primary="JAMB" className={styles.sidebarListItemText} />
+                <ExpandMoreIcon
+                  style={{
+                    transform: openJambDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: '0.2s'
+                  }}
+                />
+              </ListItem>
+              <Collapse in={openJambDropdown} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {jambSections.length > 0 ? (
+                    jambSections.map((section) => (
+                      <ListItem
+                        button
+                        key={section.slug || section._id || section.id}
+                        sx={{ pl: 4 }}
+                        onClick={() => handleJambSectionClick(section)}
+                      >
+                        <ListItemText
+                          primary={section.name}
+                          className={styles.sidebarSubItemText}
+                        />
+                      </ListItem>
+                    ))
+                  ) : (
+                    <ListItem sx={{ pl: 4 }}>
+                      <ListItemText
+                        primary="No subjects yet"
+                        className={styles.sidebarSubItemText}
+                        primaryTypographyProps={{ sx: { opacity: 0.6 } }}
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </Collapse>
+
+              <ListItem
+                button
+                component={Link}
+                to="/faq"
+                selected={location.pathname.startsWith('/faq')}
+              >
+                <ListItemIcon><HelpIcon /></ListItemIcon>
+                <ListItemText primary="FAQS" className={styles.sidebarListItemText} />
+              </ListItem>
+            </>
+          ) : (
+            // Default full sidebar for other users
+            <>
+              <ListItem
+                button
+                onClick={handleKbDropdownClick}
+                selected={location.pathname.startsWith('/knowledge-base') || openKbDropdown}
+              >
+                <ListItemIcon><MenuBookIcon /></ListItemIcon>
+                <ListItemText primary="Knowledge Base" className={styles.sidebarListItemText} />
+                <ExpandMoreIcon
+                  style={{
+                    transform: openKbDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: '0.2s'
+                  }}
+                />
+              </ListItem>
+              <Collapse in={openKbDropdown} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {subjects.map((subject) => (
+                    <ListItem
+                      button
+                      key={subject.slug || subject._id || subject.id}
+                      sx={{ pl: 4 }}
+                      onClick={() => handleKbSubjectClick(subject)}
+                    >
+                      <ListItemText
+                        primary={subject.name}
+                        className={styles.sidebarSubItemText}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+              <ListItem
+                button
+                component={Link}
+                to="/"
+                selected={location.pathname === '/'}
+              >
+                <ListItemIcon><HomeIcon /></ListItemIcon>
+                <ListItemText primary="Home" className={styles.sidebarListItemText} />
+              </ListItem>
+              <ListItem
+                button
+                component={Link}
+                to="/projects"
+                selected={location.pathname.startsWith('/projects')}
+              >
+                <ListItemIcon><FolderIcon /></ListItemIcon>
+                <ListItemText primary="Projects" className={styles.sidebarListItemText} />
+              </ListItem>
+              <ListItem
+                button
+                component={Link}
+                to="/blog"
+                selected={location.pathname.startsWith('/blog')}
+              >
+                <ListItemIcon><BookIcon /></ListItemIcon>
+                <ListItemText primary="Blog" className={styles.sidebarListItemText} />
+              </ListItem>
+              {/* Bookmarks removed from sidebar per request */}
+              <ListItem
+                button
+                component={Link}
+                to="/faq"
+                selected={location.pathname.startsWith('/faq')}
+              >
+                <ListItemIcon><HelpIcon /></ListItemIcon>
+                <ListItemText primary="FAQS" className={styles.sidebarListItemText} />
+              </ListItem>
+              <ListItem
+                button
+                onClick={handleDropdownClick}
+                selected={openDropdown}
+              >
+                <ListItemIcon><ScienceIcon /></ListItemIcon>
+                <ListItemText primary="Research Areas" className={styles.sidebarListItemText} />
+                <ExpandMoreIcon
+                  style={{
+                    transform: openDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: '0.2s'
+                  }}
+                />
+              </ListItem>
+              <Collapse in={openDropdown} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding aria-label="Research areas (ordered by site admin)">
+                  <span className={styles.visuallyHidden}>Research areas ordered by site admin</span>
+                  {researchAreas.map((area: any) => (
+                    <ListItem
+                      button
+                      key={area._id || area.title}
+                      sx={{ pl: 4 }}
+                      onClick={() => handleResearchAreaClick(area.title)}
+                    >
+                      <ListItemText
+                        primary={area.title}
+                        className={styles.sidebarSubItemText}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Collapse>
+            </>
+          )}
         </List>
       </React.Fragment>
     </Drawer>

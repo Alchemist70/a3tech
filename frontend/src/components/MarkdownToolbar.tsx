@@ -17,7 +17,7 @@ import SuperscriptIcon from '@mui/icons-material/Superscript';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 export type MarkdownToolbarProps = {
-  getTarget: () => HTMLTextAreaElement | HTMLInputElement | null;
+  getTarget?: () => HTMLTextAreaElement | HTMLInputElement | null;
   handleAddChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 };
 
@@ -54,28 +54,57 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
     after: string = before,
     placeholder: string = ''
   ) {
-    const start = textarea.selectionStart || 0;
-    const end = textarea.selectionEnd || 0;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
     const selected = textarea.value.substring(start, end) || placeholder;
     const beforeText = textarea.value.substring(0, start);
     const afterText = textarea.value.substring(end);
-    textarea.value = beforeText + before + selected + after + afterText;
+    const newVal = beforeText + before + selected + after + afterText;
+    // set value in a way React recognizes for controlled components
+    const setNativeValue = (el: any, value: string) => {
+      const valueSetter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+      const prototype = Object.getPrototypeOf(el);
+      const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+      if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+        prototypeValueSetter.call(el, value);
+      } else if (valueSetter) {
+        valueSetter.call(el, value);
+      } else {
+        el.value = value;
+      }
+    };
+    setNativeValue(textarea, newVal);
+    // restore selection and focus
     textarea.selectionStart = start + before.length;
     textarea.selectionEnd = start + before.length + selected.length;
     textarea.focus();
   }
   function insertAtCursor(textarea: HTMLTextAreaElement | HTMLInputElement, text: string) {
-    const start = textarea.selectionStart || 0;
-    const end = textarea.selectionEnd || 0;
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? 0;
     const before = textarea.value.substring(0, start);
     const after = textarea.value.substring(end);
-    textarea.value = before + text + after;
+    const newVal = before + text + after;
+    const setNativeValue = (el: any, value: string) => {
+      const valueSetter = Object.getOwnPropertyDescriptor(el, 'value')?.set;
+      const prototype = Object.getPrototypeOf(el);
+      const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+      if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+        prototypeValueSetter.call(el, value);
+      } else if (valueSetter) {
+        valueSetter.call(el, value);
+      } else {
+        el.value = value;
+      }
+    };
+    setNativeValue(textarea, newVal);
     textarea.selectionStart = textarea.selectionEnd = start + text.length;
     textarea.focus();
   }
   const handleButton = (action: () => void) => {
-    const target = getTarget();
-    if (target) {
+    const targetFromGetter = typeof getTarget === 'function' ? getTarget() : null;
+    const target = targetFromGetter || (document.activeElement as HTMLTextAreaElement | HTMLInputElement | null);
+    if (target && (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement)) {
       action();
       // Fire native input event for non-React listeners
       const event = new Event('input', { bubbles: true });
@@ -86,7 +115,6 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
         const syntheticEvent = {
           target: Object.assign(target, { value: target.value }),
           currentTarget: target,
-          // ...other fields are not needed for our use case
         } as React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
         handleAddChange(syntheticEvent);
       }
@@ -97,17 +125,17 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Font size dropdown */}
       <Tooltip title="Font Size">
         <span>
-          <Button size="small" variant="outlined" onClick={e => setAnchorElFont(e.currentTarget)}>
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={e => setAnchorElFont(e.currentTarget)}>
             <FormatSizeIcon /> <ArrowDropDownIcon fontSize="small" />
           </Button>
         </span>
       </Tooltip>
       <Menu anchorEl={anchorElFont} open={!!anchorElFont} onClose={() => setAnchorElFont(null)}>
         {fontSizes.map(opt => (
-          <MenuItem key={opt.label} onClick={() => {
+          <MenuItem key={opt.label} onMouseDown={e => e.preventDefault()} onClick={() => {
             setAnchorElFont(null);
             handleButton(() => {
-              const target = getTarget();
+              const target = typeof getTarget === 'function' ? getTarget() : null;
               if (!target) return;
               if (opt.markdown) {
                 insertAroundSelection(target, opt.markdown, opt.markdown.startsWith('<h') ? '</h1>' : opt.markdown.replace('<', '</'), 'text');
@@ -119,8 +147,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Bold */}
       <Tooltip title="Bold">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '**', '**', 'bold');
           })}><FormatBoldIcon /></Button>
@@ -129,8 +157,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Italic */}
       <Tooltip title="Italic">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '*', '*', 'italic');
           })}><FormatItalicIcon /></Button>
@@ -139,8 +167,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Underline */}
       <Tooltip title="Underline (HTML)" >
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '<u>', '</u>', 'underline');
           })}><FormatUnderlinedIcon /></Button>
@@ -149,8 +177,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Strikethrough */}
       <Tooltip title="Strikethrough">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '~~', '~~', 'strikethrough');
           })}><StrikethroughSIcon /></Button>
@@ -159,8 +187,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Subscript */}
       <Tooltip title="Subscript (HTML)">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '<sub>', '</sub>', 'sub');
           })}><SubscriptIcon /></Button>
@@ -169,8 +197,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Superscript */}
       <Tooltip title="Superscript (HTML)">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '<sup>', '</sup>', 'sup');
           })}><SuperscriptIcon /></Button>
@@ -179,17 +207,17 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Font color dropdown */}
       <Tooltip title="Font Color">
         <span>
-          <Button size="small" variant="outlined" onClick={e => setAnchorElColor(e.currentTarget)}>
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={e => setAnchorElColor(e.currentTarget)}>
             <FormatColorTextIcon /> <ArrowDropDownIcon fontSize="small" />
           </Button>
         </span>
       </Tooltip>
       <Menu anchorEl={anchorElColor} open={!!anchorElColor} onClose={() => setAnchorElColor(null)}>
         {colors.map(opt => (
-          <MenuItem key={opt.label} onClick={() => {
+          <MenuItem key={opt.label} onMouseDown={e => e.preventDefault()} onClick={() => {
             setAnchorElColor(null);
             handleButton(() => {
-              const target = getTarget();
+              const target = typeof getTarget === 'function' ? getTarget() : null;
               if (!target) return;
               insertAroundSelection(target, opt.markdown, opt.close, opt.label.toLowerCase());
             });
@@ -199,17 +227,17 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Highlight dropdown */}
       <Tooltip title="Highlight">
         <span>
-          <Button size="small" variant="outlined" onClick={e => setAnchorElHighlight(e.currentTarget)}>
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={e => setAnchorElHighlight(e.currentTarget)}>
             <FormatColorFillIcon /> <ArrowDropDownIcon fontSize="small" />
           </Button>
         </span>
       </Tooltip>
       <Menu anchorEl={anchorElHighlight} open={!!anchorElHighlight} onClose={() => setAnchorElHighlight(null)}>
         {highlights.map(opt => (
-          <MenuItem key={opt.label} onClick={() => {
+          <MenuItem key={opt.label} onMouseDown={e => e.preventDefault()} onClick={() => {
             setAnchorElHighlight(null);
             handleButton(() => {
-              const target = getTarget();
+              const target = typeof getTarget === 'function' ? getTarget() : null;
               if (!target) return;
               insertAroundSelection(target, opt.markdown, opt.close, opt.label.toLowerCase());
             });
@@ -220,8 +248,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Heading */}
       <Tooltip title="Heading">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAtCursor(target, '## ');
           })}><TitleIcon /></Button>
@@ -230,8 +258,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Bulleted List */}
       <Tooltip title="Bulleted List">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAtCursor(target, '- ');
           })}><FormatListBulletedIcon /></Button>
@@ -240,8 +268,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Numbered List */}
       <Tooltip title="Numbered List">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAtCursor(target, '1. ');
           })}><FormatListNumberedIcon /></Button>
@@ -250,8 +278,8 @@ const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({ getTarget, handleAddC
       {/* Inline Code */}
       <Tooltip title="Inline Code">
         <span>
-          <Button size="small" variant="outlined" onClick={() => handleButton(() => {
-            const target = getTarget();
+          <Button size="small" variant="outlined" onMouseDown={e => e.preventDefault()} onClick={() => handleButton(() => {
+            const target = typeof getTarget === 'function' ? getTarget() : null;
             if (!target) return;
             insertAroundSelection(target, '`', '`', 'code');
           })}><CodeIcon /></Button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
+import safeDelete from '../../api/deleteHelper';
 import { Box, Typography, List, ListItem, ListItemText, Button, TextField, IconButton, Paper, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -79,21 +80,10 @@ const AdminKnowledgeBaseTab: React.FC = () => {
     if (!deletingSubject) return;
     const id = deletingSubject.id;
     try {
-      try {
-        const res = await api.delete(`/knowledge-base/subjects/${id}`, { withCredentials: true });
-        const data = res.data;
-        if (!data || !data.success) {
-          let msg = 'Failed to delete subject.';
-          msg += ' ' + JSON.stringify(data || {});
-          alert(msg);
-        } else {
-          setSubjects(prev => prev.filter(s => (s._id || s.id) !== id));
-        }
-      } catch (err) {
-        alert('Failed to delete subject.');
-      }
-    } catch (e) {
-      alert('Failed to delete subject.');
+      await safeDelete(`/knowledge-base/subjects/${id}`);
+      setSubjects(prev => prev.filter(s => (s._id || s.id) !== id));
+    } catch (err: any) {
+      alert('Failed to delete subject: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
     } finally {
       setDeletingSubject(null);
       setDeleteDialogOpen(false);

@@ -1,0 +1,30 @@
+// Fix for NetworkMonitor.ts - Line 310 iteration issue
+// Replace: for (const allowed of this.allowedDomains)
+// With: for (const allowed of Array.from(this.allowedDomains))
+
+// Fix for ProctorService.ts - Line 231 variable name conflict
+// Replace: const status = this.getStatus();
+// With: const stat = this.getStatus();
+
+// Fix for WebcamProctor.ts - Line 198 type annotation
+// Replace: const predictions = await this.model.estimateFaces(this.videoElement, false);
+// With: const predictions: any[] = await this.model.estimateFaces(this.videoElement, false);
+
+// Manual fixes applied - run these commands in terminal:
+/*
+# Open NetworkMonitor.ts and find line ~310, change:
+# for (const allowed of this.allowedDomains) {
+# to:
+# for (const allowed of Array.from(this.allowedDomains)) {
+
+# Open ProctorService.ts and find line ~231, change:
+# const status = this.getStatus();
+# to:
+# const stat = this.getStatus();
+# Then change all ${status.x} to ${stat.x}
+
+# Open WebcamProctor.ts and find line ~198, change:
+# const predictions = await this.model.estimateFaces(this.videoElement, false);
+# to:
+# const predictions: any[] = await this.model.estimateFaces(this.videoElement, false);
+*/

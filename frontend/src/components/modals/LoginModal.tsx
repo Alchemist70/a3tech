@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthModal } from '../../contexts/AuthModalContext';
 import { useAuth } from '../../contexts/AuthContext';
 import API_BASE_URL from '../../config/api';
+import { getRedirectPathByEducationLevel } from '../../utils/redirectUtils';
 
 const LoginModal: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,13 +21,14 @@ const LoginModal: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      const userData = await login(email, password);
       setLoading(false);
       closeLogin();
       setEmail('');
       setPassword('');
-      // Redirect all users to home page after successful login
-      navigate('/');
+      // Redirect based on education level (use replace to avoid lingering /high-school in history)
+      const redirectPath = getRedirectPathByEducationLevel(userData?.educationLevel);
+      navigate(redirectPath, { replace: true });
     } catch (err: any) {
       setLoading(false);
       setError(err?.response?.data?.message || err?.message || 'Login failed');

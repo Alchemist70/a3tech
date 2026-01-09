@@ -95,8 +95,8 @@ app.use(cors({
 app.use(morgan('combined'));
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: process.env.JSON_BODY_LIMIT || '20mb' }));
 
 // Session configuration: prefer Redis store when available, fallback to MemoryStore
 let sessionStore = null;
@@ -142,6 +142,9 @@ app.use((req, res, next) => {
         res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
       } else if (req.path.includes('/user') || req.path.includes('/auth')) {
         res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
+      } else if (req.path.includes('/question-bank') || req.path.includes('/mock-test') || req.path.includes('/uploads')) {
+        // Question bank and mock-test endpoints are dynamic during admin operations; avoid caching
+        res.set('Cache-Control', 'private, no-cache');
       } else {
         res.set('Cache-Control', 'public, max-age=300'); // 5 minutes default
       }
@@ -150,9 +153,6 @@ app.use((req, res, next) => {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }
-  
-  // ETag support for efficient cache validation
-  res.set('ETag', `W/"${Date.now()}"`);
   
   next();
 });
@@ -164,8 +164,9 @@ app.use((req, res, next) => {
 try {
   const uploadsRouter = require('../routes/uploads');
   app.use('/api/uploads', uploadsRouter);
-  // Static file serving may not work well on Vercel - consider cloud storage
-  // app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+  // Also serve the uploads directory so file URLs returned by the uploads route are accessible during local/dev runs
+  const uploadsStaticPath = path.join(__dirname, '..', 'uploads');
+  app.use('/uploads', express.static(uploadsStaticPath));
 } catch (e) {
   console.warn('Uploads route not available:', e.message);
 }
@@ -184,16 +185,27 @@ const safeKeyGenerator = (req) => {
   return 'unknown';
 };
 
-const limiter = expressRateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: safeKeyGenerator
-});
+// Rate limiter configuration: allow relaxing or disabling for development via env vars.
+const isProduction = process.env.NODE_ENV === 'production';
+const rateLimitDisabled = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
+const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '') || 15 * 60 * 1000;
+// Separate env var for dev allows a much higher limit without touching production defaults
+const defaultMax = isProduction ? (parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '') || 100) : (parseInt(process.env.RATE_LIMIT_MAX_REQUESTS_DEV || '') || 10000);
 
-app.use('/api/', limiter);
+if (rateLimitDisabled) {
+  console.warn('Rate limiting is DISABLED via RATE_LIMIT_DISABLED=true');
+} else {
+  const limiter = expressRateLimit({
+    windowMs,
+    max: defaultMax,
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: safeKeyGenerator
+  });
+
+  app.use('/api/', limiter);
+}
 
 // Connect to MongoDB
 const connectDB = async () => {

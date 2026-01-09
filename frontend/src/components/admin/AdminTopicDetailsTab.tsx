@@ -6,6 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MarkdownToolbar from '../MarkdownToolbar';
+import safeDelete from '../../api/deleteHelper';
 
 interface Subject {
   _id?: string;
@@ -36,11 +37,35 @@ interface Resource {
   type: 'video' | 'article' | 'code';
 }
 
+interface Table {
+  title: string;
+  headers: string[];
+  rows: string[][];
+  description?: string;
+  rowExplanations?: string[];
+}
+
+interface Chart {
+  title: string;
+  type: 'bar' | 'pie' | 'histogram' | 'line';
+  labels: string[];
+  labelExplanations?: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string;
+    borderColor?: string;
+  }[];
+  description?: string;
+}
+
 interface Quiz {
   question: string;
-  options: string[];
-  answer: number;
-  explanations: string[];
+  options?: string[];
+  answer?: number;
+  explanations?: string[];
+  tables?: Table[];
+  charts?: Chart[];
 }
 
 interface Lesson {
@@ -160,9 +185,15 @@ const AdminTopicDetailsTab: React.FC = () => {
       return;
     }
     // Check for incomplete quizzes
-    const incompleteQuiz = Array.isArray(newDetail.quizzes) && newDetail.quizzes.some((q: any) => !q.question?.trim() || !Array.isArray(q.options) || q.options.length === 0 || q.options.some((opt: string) => !opt.trim()));
+    const incompleteQuiz = Array.isArray(newDetail.quizzes) && newDetail.quizzes.some((q: any) => {
+      const hasQuestion = q.question?.trim();
+      const hasOptions = Array.isArray(q.options) && q.options.length > 0;
+      const hasTables = Array.isArray(q.tables) && q.tables.length > 0;
+      const hasCharts = Array.isArray(q.charts) && q.charts.length > 0;
+      return !hasQuestion || (!hasOptions && !hasTables && !hasCharts);
+    });
     if (incompleteQuiz) {
-      setError('Please fill in all fields for every quiz (question, all options).');
+      setError('Please fill in all fields for every quiz (question, and either options, tables, or charts).');
       setSnackbarOpen(true);
       return;
     }
@@ -171,7 +202,13 @@ const AdminTopicDetailsTab: React.FC = () => {
         ? newDetail.resources.filter((r: any) => r && r.title?.trim() && r.url?.trim() && r.type)
         : [];
       const filteredQuizzes = Array.isArray(newDetail.quizzes)
-        ? newDetail.quizzes.filter((q: any) => q && q.question?.trim() && Array.isArray(q.options) && q.options.length > 0 && q.options.every((opt: string) => opt.trim()))
+        ? newDetail.quizzes.filter((q: any) => {
+          const hasQuestion = q.question?.trim();
+          const hasValidOptions = Array.isArray(q.options) && q.options.length > 0 && q.options.every((opt: string) => opt.trim());
+          const hasValidTables = Array.isArray(q.tables) && q.tables.length > 0;
+          const hasValidCharts = Array.isArray(q.charts) && q.charts.length > 0;
+          return q && hasQuestion && (hasValidOptions || hasValidTables || hasValidCharts);
+        })
         : [];
       const payload = {
         ...newDetail,
@@ -200,18 +237,13 @@ const AdminTopicDetailsTab: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await import('../../api').then(mod => mod.default.delete(`/topic-details/${id}`, { withCredentials: true }));
-      const data = res.data;
-      if (!data || !data.success) {
-        setError((data && data.message) || 'Failed to delete topic detail.');
-        setSnackbarOpen(true);
-        return;
-      }
+      const data = await safeDelete(`/topic-details/${id}`);
       setTopicDetails(topicDetails.filter(td => (td._id || td.id) !== id));
       setMessage('Topic detail deleted.');
       setSnackbarOpen(true);
-    } catch (err) {
-      setError('Failed to delete topic detail.');
+    } catch (err: any) {
+      const serverMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to delete topic detail.';
+      setError(String(serverMsg));
       setSnackbarOpen(true);
     }
     setDeleteOpen(false);
@@ -250,9 +282,15 @@ const AdminTopicDetailsTab: React.FC = () => {
       return;
     }
     // Check for incomplete quizzes
-    const incompleteQuiz = Array.isArray(editFields.quizzes) && editFields.quizzes.some((q: any) => !q.question?.trim() || !Array.isArray(q.options) || q.options.length === 0 || q.options.some((opt: string) => !opt.trim()));
+    const incompleteQuiz = Array.isArray(editFields.quizzes) && editFields.quizzes.some((q: any) => {
+      const hasQuestion = q.question?.trim();
+      const hasOptions = Array.isArray(q.options) && q.options.length > 0;
+      const hasTables = Array.isArray(q.tables) && q.tables.length > 0;
+      const hasCharts = Array.isArray(q.charts) && q.charts.length > 0;
+      return !hasQuestion || (!hasOptions && !hasTables && !hasCharts);
+    });
     if (incompleteQuiz) {
-      setError('Please fill in all fields for every quiz (question, all options).');
+      setError('Please fill in all fields for every quiz (question, and either options, tables, or charts).');
       setSnackbarOpen(true);
       return;
     }
@@ -261,7 +299,13 @@ const AdminTopicDetailsTab: React.FC = () => {
         ? editFields.resources.filter((r: any) => r && r.title?.trim() && r.url?.trim() && r.type)
         : [];
       const filteredQuizzes = Array.isArray(editFields.quizzes)
-        ? editFields.quizzes.filter((q: any) => q && q.question?.trim() && Array.isArray(q.options) && q.options.length > 0 && q.options.every((opt: string) => opt.trim()))
+        ? editFields.quizzes.filter((q: any) => {
+          const hasQuestion = q.question?.trim();
+          const hasValidOptions = Array.isArray(q.options) && q.options.length > 0 && q.options.every((opt: string) => opt.trim());
+          const hasValidTables = Array.isArray(q.tables) && q.tables.length > 0;
+          const hasValidCharts = Array.isArray(q.charts) && q.charts.length > 0;
+          return q && hasQuestion && (hasValidOptions || hasValidTables || hasValidCharts);
+        })
         : [];
       const payload = {
         ...editFields,
@@ -313,7 +357,7 @@ const AdminTopicDetailsTab: React.FC = () => {
       </Snackbar>
       <Typography variant="h6" gutterBottom>Manage Topic Details</Typography>
       {/* Markdown Help and Toolbar */}
-      <Box sx={{ position: 'sticky', top: 0, zIndex: 1200, background: 'background.default', pb: 2, pt: 2, mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ position: 'fixed', left: 0, right: 0, top: 'calc(var(--appbar-height, 64px) + var(--admin-header-height, 48px) + var(--admin-tabs-height, 48px))', zIndex: 1200, background: 'background.default', pb: 2, pt: 2, mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
         <Accordion defaultExpanded sx={{ maxWidth: 1200, margin: '0 auto', mb: 1 }}>
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -485,7 +529,7 @@ const AdminTopicDetailsTab: React.FC = () => {
             })}>Remove Quiz</Button>
           </Paper>
         ))}
-        <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setNewDetail((d: typeof emptyDetail) => ({ ...d, quizzes: [...(d.quizzes || []), { question: '', options: [], answer: 0, explanations: [] }] }))}>Add Quiz</Button>
+        <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setNewDetail((d: typeof emptyDetail) => ({ ...d, quizzes: [...(d.quizzes || []), { question: '', options: [], answer: 0, explanations: [], tables: [], charts: [] }] }))}>Add Quiz</Button>
 
         {/* Lessons CRUD */}
         <Divider sx={{ my: 2 }} />
@@ -590,12 +634,12 @@ const AdminTopicDetailsTab: React.FC = () => {
                 </Box>
                 <ListItem alignItems="flex-start" secondaryAction={
                   editId === (detail._id || detail.id) ? (
-                    <IconButton edge="end" onClick={() => handleSave(detail._id || detail.id || '')}><SaveIcon /></IconButton>
+                    <IconButton edge="end" onMouseDown={e => e.preventDefault()} onClick={() => handleSave(detail._id || detail.id || '')}><SaveIcon /></IconButton>
                   ) : (
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                      <IconButton edge="end" onClick={() => handleEdit(detail)}><EditIcon /></IconButton>
+                      <IconButton edge="end" onMouseDown={e => e.preventDefault()} onClick={() => handleEdit(detail)}><EditIcon /></IconButton>
                       <Box sx={{ width: 12 }} />
-                      <IconButton edge="end" color="error" onClick={() => confirmDelete(detail._id || detail.id || '', detail.slug || detail.description || 'this topic detail')}><DeleteIcon /></IconButton>
+                      <IconButton edge="end" color="error" onMouseDown={e => e.preventDefault()} onClick={() => confirmDelete(detail._id || detail.id || '', detail.slug || detail.description || 'this topic detail')}><DeleteIcon /></IconButton>
                     </Box>
                   )
                 }>
@@ -676,7 +720,7 @@ const AdminTopicDetailsTab: React.FC = () => {
                       {/* Quizzes CRUD (Edit) */}
                       <Divider sx={{ my: 2 }} />
                       <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Quizzes</Typography>
-                      <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setEditFields((f: typeof emptyDetail | null) => f ? { ...f, quizzes: [...(f.quizzes || []), { question: '', options: ['', ''], answer: 0, explanations: ['', ''] }] } : f)}>Add Quiz</Button>
+                      <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setEditFields((f: typeof emptyDetail | null) => f ? { ...f, quizzes: [...(f.quizzes || []), { question: '', options: [], answer: 0, explanations: [], tables: [], charts: [] }] } : f)}>Add Quiz</Button>
                       {Array.isArray(editFields.quizzes) && editFields.quizzes.map((quiz: any, idx: number) => (
                         <Box key={idx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: 'background.paper' }}>
                           <TextField label="Question" value={quiz.question} onChange={e => setEditFields((d: typeof emptyDetail | null) => {

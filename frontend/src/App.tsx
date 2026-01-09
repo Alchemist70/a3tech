@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { CustomThemeProvider, useTheme as useCustomTheme } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthModalProvider } from './contexts/AuthModalContext';
+import { SafeExamModeProvider } from './contexts/SafeExamModeContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -37,6 +38,24 @@ import Subscription from './pages/Subscription';
 import Payment from './pages/Payment';
 import Sidebar from './components/Sidebar';
 import AuthCallback from './pages/AuthCallback';
+import HighSchoolHome from './pages/HighSchoolHome';
+import WaecTopics from './pages/WaecTopics';
+import JambTopics from './pages/JambTopics';
+import JambMockTestStart from './pages/JambMockTestStart';
+import JambSubjectSelection from './pages/JambSubjectSelection';
+import JambConfirmation from './pages/JambConfirmation';
+import JambTestInstructions from './pages/JambTestInstructions';
+import JambTest from './pages/JambTest';
+import JambResult from './pages/JambResult';
+import JambCheckResult from './pages/JambCheckResult';
+import WaecMockTestStart from './pages/WaecMockTestStart';
+import WaecSubjectSelection from './pages/WaecSubjectSelection';
+import WaecConfirmation from './pages/WaecConfirmation';
+import WaecTestInstructions from './pages/WaecTestInstructions';
+import WaecTest from './pages/WaecTest';
+import WaecResult from './pages/WaecResult';
+import WaecCheckResult from './pages/WaecCheckResult';
+import { useSafeExamMode } from './contexts/SafeExamModeContext';
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +63,7 @@ function AppContent() {
   const { darkMode } = useCustomTheme();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { isExamMode } = useSafeExamMode();
 
   // Sync isMobile to local state to handle useMediaQuery inconsistencies after multiple refreshes
   useEffect(() => {
@@ -75,13 +95,13 @@ function AppContent() {
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: darkMode ? '#0f172a' : 'transparent' }}>
-        <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        {!isExamMode && <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />}
         <Box sx={{ display: 'flex', flexGrow: 1 }}>
-          <Sidebar 
+          {!isExamMode && <Sidebar 
             open={sidebarOpen} 
             onClose={() => setSidebarOpen(false)} 
             variant={sidebarVariant}
-          />
+          />}
           <Box 
             component="main" 
             sx={{ 
@@ -168,16 +188,143 @@ function AppContent() {
                     <TopicDetail />
                   </GoldMemberRoute>
                 } />
-                {/* New subscription and payment routes */}
+                
+                {/* High School (WAEC/JAMB) routes */}
+                {/* Keep a single canonical Home at '/' for high-school users; redirect legacy path to root */}
+                <Route path="/high-school" element={<Navigate to="/" replace />} />
+                <Route path="/waec" element={
+                  <GoldMemberRoute>
+                    <WaecTopics />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/jamb" element={
+                  <GoldMemberRoute>
+                    <JambTopics />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/waec/:sectionSlug" element={
+                  <GoldMemberRoute>
+                    <WaecTopics />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/jamb/:sectionSlug" element={
+                  <GoldMemberRoute>
+                    <JambTopics />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/waec/:sectionSlug/:topicSlug" element={
+                  <GoldMemberRoute>
+                    <TopicDetail />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/waec/:sectionSlug/:topicSlug/:detailSlug" element={
+                  <GoldMemberRoute>
+                    <TopicDetail />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/jamb/:sectionSlug/:topicSlug" element={
+                  <GoldMemberRoute>
+                    <TopicDetail />
+                  </GoldMemberRoute>
+                } />
+                <Route path="/jamb/:sectionSlug/:topicSlug/:detailSlug" element={
+                  <GoldMemberRoute>
+                    <TopicDetail />
+                  </GoldMemberRoute>
+                } />
+                
+                {/* Mock Test Routes */}
+                <Route path="/mock-test/jamb" element={
+                  <ProtectedRoute>
+                    <JambMockTestStart />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/subjects" element={
+                  <ProtectedRoute>
+                    <JambSubjectSelection />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/subjects/:mockTestId" element={
+                  <ProtectedRoute>
+                    <JambSubjectSelection />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/confirm/:mockTestId" element={
+                  <ProtectedRoute>
+                    <JambConfirmation />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/instructions/:mockTestId" element={
+                  <ProtectedRoute>
+                    <JambTestInstructions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/test/:mockTestId" element={
+                  <ProtectedRoute>
+                    <JambTest />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/result/:mockTestId" element={
+                  <ProtectedRoute>
+                    <JambResult />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/jamb/check-result" element={
+                  <ProtectedRoute>
+                    <JambCheckResult />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec" element={
+                  <ProtectedRoute>
+                    <WaecMockTestStart />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/subjects" element={
+                  <ProtectedRoute>
+                    <WaecSubjectSelection />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/subjects/:mockTestId" element={
+                  <ProtectedRoute>
+                    <WaecSubjectSelection />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/confirm/:mockTestId" element={
+                  <ProtectedRoute>
+                    <WaecConfirmation />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/instructions/:mockTestId" element={
+                  <ProtectedRoute>
+                    <WaecTestInstructions />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/test/:mockTestId" element={
+                  <ProtectedRoute>
+                    <WaecTest />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/result/:mockTestId" element={
+                  <ProtectedRoute>
+                    <WaecResult />
+                  </ProtectedRoute>
+                } />
+                <Route path="/mock-test/waec/check-result" element={
+                  <ProtectedRoute>
+                    <WaecCheckResult />
+                  </ProtectedRoute>
+                } />
+                
+                {/* JAMB Mock Test Routes */}
                 <Route path="/subscription" element={<Subscription />} />
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/auth-callback" element={<AuthCallback />} />
                 <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Box>
-              </Box>
-              <Footer />
+                </Routes>
             </Box>
+          </Box>
+          {!isExamMode && <Footer />}
+        </Box>
       {/* Auth modals */}
       <LoginModal />
       <SignupModal />
@@ -191,14 +338,22 @@ function App() {
       <Router>
         <AuthProvider>
           <AuthModalProvider>
-            <AppContent />
-            {/* Global chat widget (fixed, won't affect routing) */}
-            <ChatWidget />
+            <SafeExamModeProvider>
+              <AppContent />
+              {/* Global chat widget wrapper */}
+              <ChatWidgetWrapper />
+            </SafeExamModeProvider>
           </AuthModalProvider>
         </AuthProvider>
       </Router>
     </CustomThemeProvider>
   );
+}
+
+// Wrapper to conditionally show ChatWidget
+function ChatWidgetWrapper() {
+  const { isExamMode } = useSafeExamMode();
+  return !isExamMode ? <ChatWidget /> : null;
 }
 
 export default App;

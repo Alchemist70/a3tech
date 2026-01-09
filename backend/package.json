@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "migrate:backfill-quiz-images": "node scripts/backfill-quiz-images.js",
     "lint": "echo \"No linter configured\"",
     "test": "jest --runInBand"
   },

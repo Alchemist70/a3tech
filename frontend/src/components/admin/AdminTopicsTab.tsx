@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
+import safeDelete from '../../api/deleteHelper';
 import { Box, Typography, List, ListItem, ListItemText, Button, TextField, IconButton, Paper, MenuItem, Select, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -97,20 +98,11 @@ const AdminTopicsTab: React.FC = () => {
     if (!deletingTopic) return;
     const id = deletingTopic.id;
     try {
-      try {
-        const res = await api.delete(`/topics/${id}`, { withCredentials: true });
-        const data = res.data;
-        if (!data || !data.success) {
-          alert('Error deleting topic.');
-          return;
-        }
-        const topicsRes = await api.get('/topics', { withCredentials: true });
-        setTopics(topicsRes.data || []);
-      } catch (err) {
-        alert('Error deleting topic.');
-      }
-    } catch {
-      alert('Error deleting topic.');
+      await safeDelete(`/topics/${id}`);
+      const topicsRes = await api.get('/topics', { withCredentials: true });
+      setTopics(topicsRes.data || []);
+    } catch (err: any) {
+      alert('Error deleting topic: ' + (err?.response?.data?.message || err?.message || 'Unknown error'));
     } finally {
       setDeleteDialogOpen(false);
       setDeletingTopic(null);

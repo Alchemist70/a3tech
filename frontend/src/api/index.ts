@@ -43,9 +43,9 @@ api.interceptors.request.use((config) => {
   try {
     const fp = getOrCreateFingerprint();
     if (fp && config.headers) config.headers['x-fingerprint'] = fp;
-  // Use admin token for admin routes (admin UI and gold-members), otherwise use public auth token
+  // Use admin token for admin routes (admin UI, gold-members, and question bank), otherwise use public auth token
   const urlPath = config.url || '';
-  const isAdminRoute = /^(\/admin|\/gold-members)/.test(urlPath);
+  const isAdminRoute = /^(\/admin|\/gold-members|\/question-bank)/.test(urlPath);
     const token = typeof window !== 'undefined' 
       ? (isAdminRoute 
           ? localStorage.getItem('admin_auth_token')

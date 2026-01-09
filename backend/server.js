@@ -25,12 +25,21 @@ const about_1 = __importDefault(require("./routes/about"));
 const knowledgeBase_1 = __importDefault(require("./routes/knowledgeBase"));
 const topic_1 = __importDefault(require("./routes/topic"));
 const topicDetail_1 = __importDefault(require("./routes/topicDetail"));
+const waecSection_1 = __importDefault(require("./routes/waecSection"));
+const waecTopic_1 = __importDefault(require("./routes/waecTopic"));
+const waecTopicDetail_1 = __importDefault(require("./routes/waecTopicDetail"));
+const jambSection_1 = __importDefault(require("./routes/jambSection"));
+const jambTopic_1 = __importDefault(require("./routes/jambTopic"));
+const jambTopicDetail_1 = __importDefault(require("./routes/jambTopicDetail"));
 const researchAreas_1 = __importDefault(require("./routes/researchAreas"));
 const chat_1 = __importDefault(require("./routes/chat"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const visits_1 = __importDefault(require("./routes/visits"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const goldMemberStatus_1 = __importDefault(require("./routes/goldMemberStatus"));
+const mockTest_1 = __importDefault(require("./routes/mockTest"));
+const questionBank_1 = __importDefault(require("./routes/questionBank"));
+const sebTemplateRoutes = require('./routes/sebTemplateRoutes');
 // Load environment variables
 dotenv_1.default.config();
 
@@ -110,25 +119,33 @@ app.use((req, res, next) => {
 app._router && app._router.stack && app._router.stack.length && (() => {
     // remove previous applied limiter middleware if any (to replace)
 })();
-// Apply limiter again with safeKeyGenerator (this is idempotent for startup)
-const limiterWithKey = (0, express_rate_limit_1.default)(Object.assign({}, {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-    message: 'Too many requests from this IP, please try again later.',
-    keyGenerator: safeKeyGenerator,
-    standardHeaders: true,
-    legacyHeaders: false,
-}));
-// replace limiter middleware by applying limiterWithKey
-app.use(limiterWithKey);
+// Allow disabling or relaxing the rate limiter via env vars for development
+const isProduction = process.env.NODE_ENV === 'production';
+const rateLimitDisabled = String(process.env.RATE_LIMIT_DISABLED || 'false').toLowerCase() === 'true';
+const windowMsVal = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '') || 900000;
+const defaultMaxVal = isProduction ? (parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '') || 100) : (parseInt(process.env.RATE_LIMIT_MAX_REQUESTS_DEV || '') || 10000);
+
+if (rateLimitDisabled) {
+    console.warn('Rate limiting is DISABLED via RATE_LIMIT_DISABLED=true');
+} else {
+    const limiterWithKey = (0, express_rate_limit_1.default)(Object.assign({}, {
+        windowMs: windowMsVal,
+        max: defaultMaxVal,
+        message: 'Too many requests from this IP, please try again later.',
+        keyGenerator: safeKeyGenerator,
+        standardHeaders: true,
+        legacyHeaders: false,
+    }));
+    app.use(limiterWithKey);
+}
 // CORS configuration
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true
 }));
 // Body parsing middleware
-app.use(express_1.default.json({ limit: '10mb' }));
-app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express_1.default.json({ limit: process.env.JSON_BODY_LIMIT || '20mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: process.env.JSON_BODY_LIMIT || '20mb' }));
 
 // Session configuration for Passport
 // Session configuration: use Redis when available to persist sessions across restarts
@@ -190,8 +207,12 @@ app.use((req, res, next) => {
     // Set cache headers based on route and response type
     if (req.path.startsWith('/api/')) {
         if (req.method === 'GET') {
-            // Cache read-only API responses (data won't change frequently)
-            if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/faq') || req.path.includes('/topics')) {
+            // For frequently-updated admin-managed endpoints (WAEC/JAMB sections, question bank and topics),
+            // avoid client-side caching so changes made via admin UI appear immediately.
+            if (req.path.includes('/waec-sections') || req.path.includes('/jamb-sections') || req.path.includes('/waec-topics') || req.path.includes('/jamb-topics') || req.path.includes('/waec-topic-details') || req.path.includes('/jamb-topic-details') || req.path.includes('/question-bank') || req.path.includes('/mock-test')) {
+                res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            } else if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/faq') || req.path.includes('/topics')) {
+                // Slightly longer caching for larger read-only collections
                 res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
             } else if (req.path.includes('/user') || req.path.includes('/auth')) {
                 res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
@@ -203,9 +224,6 @@ app.use((req, res, next) => {
             res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
     }
-    
-    // ETag support for efficient cache validation
-    res.set('ETag', `W/"${Date.now()}"`);
     
     next();
 });
@@ -284,6 +302,12 @@ app.use('/api/about', about_1.default);
 app.use('/api/knowledge-base', knowledgeBase_1.default);
 app.use('/api/topics', topic_1.default);
 app.use('/api/topic-details', topicDetail_1.default);
+app.use('/api/waec-sections', waecSection_1.default);
+app.use('/api/waec-topics', waecTopic_1.default);
+app.use('/api/waec-topic-details', waecTopicDetail_1.default);
+app.use('/api/jamb-sections', jambSection_1.default);
+app.use('/api/jamb-topics', jambTopic_1.default);
+app.use('/api/jamb-topic-details', jambTopicDetail_1.default);
 app.use('/api/research-areas', researchAreas_1.default);
 app.use('/api/chat', chat_1.default);
 app.use('/api/chat-history', chatHistory);
@@ -294,6 +318,13 @@ app.use('/api/code', require('./routes/codeExecution'));
 app.use('/api/admin', admin_1.default);
 app.use('/api/gold-members', require('./routes/goldMembers'));
 app.use('/api/gold-member-status', goldMemberStatus_1.default);
+// Mock test endpoints
+app.use('/api/mock-test', mockTest_1.default);
+app.use('/api/question-bank', questionBank_1.default);
+// SEB template admin routes (requires auth)
+app.use('/api/seb-templates', sebTemplateRoutes);
+// Exam session endpoints (proctoring)
+app.use('/api/exam-sessions', require('./routes/examSessionRoutes'));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.status(200).json({
@@ -334,6 +365,9 @@ const io = new socketIO.Server(server, {
         credentials: true
     }
 });
+
+// Attach io instance to app for use in controllers
+app.set('io', io);
 
 // Setup interactive code execution socket handler
 setupInteractiveCodeSocket(io);

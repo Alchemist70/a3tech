@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Button, Alert, FormControl, InputLabel, Select, MenuItem, Box, Typography, Divider } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuthModal } from '../../contexts/AuthModalContext';
 import API_BASE_URL from '../../config/api';
+import { getRedirectPathByEducationLevel } from '../../utils/redirectUtils';
 
 const SignupModal: React.FC = () => {
   const [name, setName] = useState('');
@@ -21,6 +23,7 @@ const SignupModal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const { signupOpen, closeSignup, switchToLogin } = useAuthModal();
+  const navigate = useNavigate();
 
   const submit = async () => {
     setError(null);
@@ -71,7 +74,9 @@ const SignupModal: React.FC = () => {
   const handleSuccessClose = () => {
     setSuccessOpen(false);
     handleClose();
-    switchToLogin();
+    // Instead of switching to login, redirect to appropriate page based on education level (replace)
+    const redirectPath = getRedirectPathByEducationLevel(educationLevel);
+    navigate(redirectPath, { replace: true });
   };
 
   return (
@@ -263,10 +268,10 @@ const SignupModal: React.FC = () => {
             <strong>Welcome!</strong> Your account has been created successfully.
           </DialogContentText>
           <DialogContentText sx={{ mb: 2 }}>
-            Please click OK below to proceed to the sign-in page.
+            Click OK below to proceed to your personalized dashboard.
           </DialogContentText>
           <DialogContentText sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-            You can now log in with your email and password to access the platform and start using Einstein, our AI assistant.
+            You can start exploring the platform and using Einstein, our AI assistant.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
