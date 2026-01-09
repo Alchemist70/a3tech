@@ -33,7 +33,6 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
     { name: 'Session Creation', status: 'pending', message: 'Creating exam session...' },
   ]);
   const [overallRiskScore, setOverallRiskScore] = useState(0);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   // Note: Fullscreen is maintained by the parent JambTest/WaecTest component.
@@ -236,7 +235,6 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
         clearTimeout(sessionTimeout);
 
         if (sessionResponse.data.sessionId) {
-          setSessionId(sessionResponse.data.sessionId);
           setLocalResult(5, {
             status: 'pass',
             message: 'Exam session created successfully',
@@ -289,6 +287,7 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
 
   useEffect(() => {
     runPreflightChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRetry = async () => {
@@ -358,7 +357,6 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
             // Request fullscreen and wait for it to complete
             try {
               await elem.requestFullscreen();
-              isInFullscreen = true;
               if (process.env.NODE_ENV !== 'production') {
                 // eslint-disable-next-line no-console
                 console.log('[PreflightChecks] Entered fullscreen successfully');

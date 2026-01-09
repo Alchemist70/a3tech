@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   useTheme,
-  useMediaQuery,
   alpha,
   Alert,
 } from '@mui/material';
@@ -97,7 +96,7 @@ const WaecResult: React.FC = () => {
   };
 
   const { grade } = getGrade();
-
+  const { grade: userGrade, comment } = getGrade();
   
 
   return (

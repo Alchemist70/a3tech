@@ -7,11 +7,10 @@ import {
   Card,
   CardContent,
   useTheme,
-  useMediaQuery,
   alpha,
   Alert,
 } from '@mui/material';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowBack } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -41,7 +40,7 @@ const JambResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
-  const { grade } = getGrade();
+  const { grade: userGrade, comment } = getGrade();
 
   return (
     <Box sx={{ minHeight: '100vh', background: theme.palette.background.default, py: { xs: 4, md: 8 } }}>

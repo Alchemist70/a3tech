@@ -14,7 +14,6 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  useMediaQuery,
   alpha,
   Chip,
 } from '@mui/material';

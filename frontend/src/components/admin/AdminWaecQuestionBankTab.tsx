@@ -76,6 +76,7 @@ const AdminWaecQuestionBankTab: React.FC = () => {
 
   useEffect(() => {
     fetchQuestions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, selectedSubject]);
 
   const fetchSubjects = async () => {

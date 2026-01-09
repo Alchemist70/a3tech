@@ -19,7 +19,6 @@ import {
   Divider,
   Alert,
   useTheme,
-  useMediaQuery,
   alpha,
 } from '@mui/material';
 import { ArrowBack, ArrowForward, Bookmark, BookmarkBorder } from '@mui/icons-material';
@@ -49,7 +48,6 @@ interface Response {
 
 const JambTest: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const { user } = useAuth();

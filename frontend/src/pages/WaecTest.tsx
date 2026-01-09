@@ -8,7 +8,6 @@ import {
   CardContent,
   CircularProgress,
   useTheme,
-  useMediaQuery,
   alpha,
   Grid,
   Dialog,
@@ -51,8 +50,8 @@ const WaecTest: React.FC = () => {
   const [questionIdMap, setQuestionIdMap] = useState<{ [key: string]: string }>({});
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState(1);
   const [phaseStarted, setPhaseStarted] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState(1);
   // Fullscreen violation tracking (mirror JAMB logic)
   const [violationCount, setViolationCount] = useState<number>(() => {
     try {

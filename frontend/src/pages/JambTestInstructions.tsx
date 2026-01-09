@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   CardContent,
-  CircularProgress,
   useTheme,
-  useMediaQuery,
   alpha,
   Divider,
 } from '@mui/material';
@@ -20,7 +18,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 const JambInstructions: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const { user } = useAuth();

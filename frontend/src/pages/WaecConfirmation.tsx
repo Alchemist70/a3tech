@@ -9,7 +9,6 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  useMediaQuery,
   alpha,
   Divider,
   IconButton,

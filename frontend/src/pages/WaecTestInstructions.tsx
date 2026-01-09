@@ -8,7 +8,6 @@ import {
   CardContent,
   CircularProgress,
   useTheme,
-  useMediaQuery,
   alpha,
   Divider,
   Alert,

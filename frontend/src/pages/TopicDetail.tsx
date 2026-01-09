@@ -220,7 +220,6 @@ const EmbedIframeWithFallback: React.FC<{
   height?: string | number;
 }> = ({ src, youtubeId, vimeoId, width = '100%', height = 270 }) => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'failed'>('idle');
   
   return (
     <Box
@@ -1682,7 +1681,6 @@ const TopicDetail: React.FC = () => {
                       textOptions.forEach((tOpt: string) => { combined.push(tOpt); textMeta.push({ kind: 'text' }); });
                       // Add table row labels to selectable options
                       tableRowLabels.forEach(l => combined.push(l));
-                      const chartStartIndex = combined.length;
                       // Add chart labels to selectable options
                       chartOptionLabels.forEach(l => combined.push(l));
                       const fullMeta = [...textMeta, ...combinedMeta];

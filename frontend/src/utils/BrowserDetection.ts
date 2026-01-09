@@ -257,17 +257,11 @@ export const detectSuspiciousExtensions = (): string[] => {
   const suspiciousExtensions: string[] = [];
 
   // Check for known suspicious extensions
-  const _suspiciousKeywords = [
-    'vpn',
-    'proxy',
-    'anonymizer',
-    'answer',
-    'cheat',
-    'homework',
-    'auto-answer',
-    'auto-fill',
-    'password-manager',
-  ];
+  // Note: _suspiciousKeywords kept for future extension validation
+  // const _suspiciousKeywords = [
+  //   'vpn', 'proxy', 'anonymizer', 'answer', 'cheat',
+  //   'homework', 'auto-answer', 'auto-fill', 'password-manager',
+  // ];
 
   // Note: Direct access to extensions list is restricted in modern browsers
   // This is a limited check based on observable behaviors
