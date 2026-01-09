@@ -26,6 +26,7 @@ const WaecResult: React.FC = () => {
   const [total, setTotal] = useState<number>(state?.total || 0);
   const [examId, setExamId] = useState<string>(state?.examId || '');
   const [performanceBySubject, setPerformanceBySubject] = useState<any[]>(state?.performanceBySubject || []);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [candidateName, setCandidateName] = useState<string | null>(state?.candidateName || null);
   const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
 
@@ -95,8 +96,8 @@ const WaecResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { grade } = getGrade();
-  const { grade: userGrade, comment } = getGrade();
   
 
   return (

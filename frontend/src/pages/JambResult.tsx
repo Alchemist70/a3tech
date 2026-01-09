@@ -40,7 +40,7 @@ const JambResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
-  const { grade: userGrade, comment } = getGrade();
+  const { grade: userGrade } = getGrade();
 
   return (
     <Box sx={{ minHeight: '100vh', background: theme.palette.background.default, py: { xs: 4, md: 8 } }}>

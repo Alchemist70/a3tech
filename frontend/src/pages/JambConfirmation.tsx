@@ -26,6 +26,7 @@ const JambConfirmation: React.FC = () => {
   const { user } = useAuth();
 
   const [examId, setExamId] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showIdGenerated, setShowIdGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

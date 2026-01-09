@@ -336,7 +336,7 @@ export const performSecurityAssessment = async (): Promise<{
   };
 };
 
-export default {
+const BrowserDetectionModule = {
   getBrowserInfo,
   assessBrowserRisk,
   disableCopyPaste,
@@ -346,3 +346,5 @@ export default {
   detectSuspiciousExtensions,
   performSecurityAssessment,
 };
+
+export default BrowserDetectionModule;

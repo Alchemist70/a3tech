@@ -351,9 +351,7 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
           // Check if we're already in fullscreen
-          if (document.fullscreenElement) {
-            isInFullscreen = true;
-          } else {
+          if (!document.fullscreenElement) {
             // Request fullscreen and wait for it to complete
             try {
               await elem.requestFullscreen();

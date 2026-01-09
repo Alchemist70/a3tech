@@ -237,7 +237,8 @@ const JambTest: React.FC = () => {
     if (timeRemaining === 0 && !loading) {
       handleSubmitTest();
     }
-  }, [timeRemaining, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRemaining, loading]); // handleSubmitTest is defined below and can't be in deps
 
   // Digital clock (local time) update
   useEffect(() => {
