@@ -431,6 +431,22 @@ const createProject = async (req, res) => {
                 console.error('Failed to write sanitized_ec_debug.json', e && e.message);
             }
         }
+        // Ensure all required fields have values to prevent MongoDB validation errors
+        if (!projectData.title || !String(projectData.title).trim()) {
+            projectData.title = 'Untitled Project';
+        }
+        if (!projectData.subtitle || !String(projectData.subtitle).trim()) {
+            projectData.subtitle = 'No subtitle provided';
+        }
+        if (!projectData.description || !String(projectData.description).trim()) {
+            projectData.description = 'No description provided';
+        }
+        if (!projectData.detailedDescription || !String(projectData.detailedDescription).trim()) {
+            projectData.detailedDescription = projectData.description;
+        }
+        if (!projectData.category) {
+            projectData.category = 'ai-ml';
+        }
         const project = new Project_1.default(projectData);
         await project.save();
         res.status(201).json({
