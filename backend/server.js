@@ -136,7 +136,17 @@ if (rateLimitDisabled) {
         standardHeaders: true,
         legacyHeaders: false,
     }));
-    app.use(limiterWithKey);
+    // Ensure CORS preflight requests are not rate limited and are handled
+    // before applying the limiter. Browsers send OPTIONS preflight for
+    // cross-origin requests; treating those as regular requests can trigger
+    // the rate limiter and cause 429 responses for otherwise valid preflights.
+    // Allow OPTIONS through without invoking the rate limiter.
+    app.options('*', (0, cors_1.default)({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+    app.use((req, res, next) => {
+        if (req.method === 'OPTIONS')
+            return next();
+        return limiterWithKey(req, res, next);
+    });
 }
 // CORS configuration
 app.use((0, cors_1.default)({
