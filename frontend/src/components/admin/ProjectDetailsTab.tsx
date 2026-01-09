@@ -3,9 +3,11 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import api from '../../api';
+import normalizeImageUrl from '../../utils/normalizeImageUrl';
 import { Project } from '../../types/Project';
 import styles from './ProjectDetailsTab.module.css';
 import { buildProjectPayload } from '../../utils/projectPayloadBuilder';
+import { PROJECT_CONSTRAINTS } from '../../constants/projectConstraints';
 import { Paper, Typography, Divider, Button, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
 import MarkdownToolbar from '../MarkdownToolbar';
 
@@ -55,6 +57,11 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
   const [editResourceStrings, setEditResourceStrings] = useState<Record<Level, string>>(() => {
     const obj = {} as Record<Level, string>;
     levels.forEach(l => { obj[l] = arrayToResourceString(emptyProject.educationalContent[l].resources); });
+    return obj;
+  });
+  const [editPrereqStrings, setEditPrereqStrings] = useState<Record<Level, string>>(() => {
+    const obj = {} as Record<Level, string>;
+    levels.forEach(l => { obj[l] = Array.isArray(emptyProject.educationalContent[l].prerequisites) ? emptyProject.educationalContent[l].prerequisites.join(', ') : ''; });
     return obj;
   });
   // --- Add form controlled resource and quiz strings ---
@@ -137,7 +144,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
           } as any;
         }
       });
-      setPrereqStrings(editPrereqObj);
+      setEditPrereqStrings(editPrereqObj);
     }
     // No return value (do not return JSX or undefined)
   }, [projects, editProject, editIndex]);
@@ -157,13 +164,16 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     if (editProject) {
       const resObj = {} as Record<Level, string>;
       const quizObj = {} as Record<Level, string>;
+      const prereqObj = {} as Record<Level, string>;
       levels.forEach(l => {
         const lvl = (editProject.educationalContent && (editProject.educationalContent as any)[l]) ? (editProject.educationalContent as any)[l] : emptyProject.educationalContent[l];
         resObj[l] = arrayToResourceString(lvl.resources || []);
         quizObj[l] = arrayToQuizString(lvl.quizzes || []);
+        prereqObj[l] = Array.isArray(lvl.prerequisites) ? lvl.prerequisites.join(', ') : '';
       });
       setEditResourceStrings(resObj);
       setEditQuizStrings(quizObj);
+      setEditPrereqStrings(prereqObj);
     }
   }, [editProject]);
 
@@ -303,8 +313,33 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
-    } catch (err) {
-      setError('Failed to save project to backend.');
+    } catch (err: any) {
+      // Extract detailed error messages from API response
+      let errorMessage = 'Failed to save project to backend.';
+      
+      if (err.response?.data) {
+        const data = err.response.data;
+        // Check for validation errors first
+        if (data.details && typeof data.details === 'object') {
+          const errors = Object.entries(data.details)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errors}`;
+        } else if (data.validation && typeof data.validation === 'object') {
+          const errors = Object.entries(data.validation)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errors}`;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.error) {
+          errorMessage = data.error;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
@@ -483,6 +518,8 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
         setEditResourceStrings(prev => ({ ...prev, [levelKey]: value }));
       } else if (parts[2] === 'quizzes') {
         setEditQuizStrings(prev => ({ ...prev, [levelKey]: value }));
+      } else if (parts[2] === 'prerequisites') {
+        setEditPrereqStrings(prev => ({ ...prev, [levelKey]: value }));
       } else {
         // Handle other educationalContent fields
         const field = parts[2];
@@ -512,14 +549,14 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
       const parsedEditResourceStrings = { ...editResourceStrings };
       levels.forEach(level => {
         if (!parsedEditResourceStrings[level]) parsedEditResourceStrings[level] = '';
-        // Sync prerequisites from prereqStrings to editProject before saving
+        // Sync prerequisites from editPrereqStrings to editProject before saving
         if (editProject && editProject.educationalContent[level]) {
-          editProject.educationalContent[level].prerequisites = prereqStrings[level]
-            ? prereqStrings[level].split(',').map(s => s.trim()).filter(s => s.length > 0)
+          editProject.educationalContent[level].prerequisites = editPrereqStrings[level]
+            ? editPrereqStrings[level].split(',').map(s => s.trim()).filter(s => s.length > 0)
             : [];
         }
       });
-      const payload = buildProjectPayload(editProject as Project, parsedEditResourceStrings, editQuizStrings, prereqStrings);
+      const payload = buildProjectPayload(editProject as Project, parsedEditResourceStrings, editQuizStrings, editPrereqStrings);
       console.log('DEBUG: Prerequisites sent (edit):', {
         beginner: payload.educationalContent.beginner.prerequisites,
         intermediate: payload.educationalContent.intermediate.prerequisites,
@@ -550,8 +587,33 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
-    } catch (err) {
-      setError('Failed to save project changes to backend.');
+    } catch (err: any) {
+      // Extract detailed error messages from API response
+      let errorMessage = 'Failed to save project changes to backend.';
+      
+      if (err.response?.data) {
+        const data = err.response.data;
+        // Check for validation errors first
+        if (data.details && typeof data.details === 'object') {
+          const errors = Object.entries(data.details)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errors}`;
+        } else if (data.validation && typeof data.validation === 'object') {
+          const errors = Object.entries(data.validation)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errors}`;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.error) {
+          errorMessage = data.error;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
@@ -696,22 +758,44 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
             <TextField label="Project UUID" name="id" value={newProject.id || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" placeholder="Paste Project UUID here" sx={{ mb: 2 }} />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField label="Project Title" name="title" value={newProject.title || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
+            <TextField 
+              label="Project Title" 
+              name="title" 
+              value={newProject.title || ''} 
+              onChange={handleAddChange} 
+              onFocus={handleFocus} 
+              fullWidth 
+              size="small" 
+              variant="outlined"
+              inputProps={{ maxLength: PROJECT_CONSTRAINTS.title.maxLength }}
+              helperText={`${(newProject.title || '').length}/${PROJECT_CONSTRAINTS.title.maxLength} characters`}
+            />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField label="Subtitle" name="subtitle" value={newProject.subtitle || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
+            <TextField 
+              label="Subtitle" 
+              name="subtitle" 
+              value={newProject.subtitle || ''} 
+              onChange={handleAddChange} 
+              onFocus={handleFocus} 
+              fullWidth 
+              size="small" 
+              variant="outlined"
+              inputProps={{ maxLength: PROJECT_CONSTRAINTS.subtitle.maxLength }}
+              helperText={`${(newProject.subtitle || '').length}/${PROJECT_CONSTRAINTS.subtitle.maxLength} characters`}
+            />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField label="Category" name="category" value={newProject.category || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
+            <TextField label="Category" name="category" value={newProject.category || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" helperText="Select or enter category" />
           </Grid>
           <Grid item xs={12} md={4}>
             <TextField label="Image URL" name="image" value={newProject.image || ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField label="Technologies (comma separated)" name="technologies" value={Array.isArray(newProject.technologies) ? newProject.technologies.join(', ') : ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
+            <TextField label="Technologies (comma separated)" name="technologies" value={Array.isArray(newProject.technologies) ? newProject.technologies.join(', ') : ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" helperText={`Up to ${PROJECT_CONSTRAINTS.technologies.maxItems} technologies`} />
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField label="Tags (comma separated)" name="tags" value={Array.isArray(newProject.tags) ? newProject.tags.join(', ') : ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" />
+            <TextField label="Tags (comma separated)" name="tags" value={Array.isArray(newProject.tags) ? newProject.tags.join(', ') : ''} onChange={handleAddChange} onFocus={handleFocus} fullWidth size="small" variant="outlined" helperText={`Up to ${PROJECT_CONSTRAINTS.tags.maxItems} tags`} />
           </Grid>
           <Grid item xs={12} md={4}>
             <FormControlLabel control={<Switch checked={!!newProject.featured} onChange={handleAddChange} name="featured" color="primary" />} label="Featured" sx={{ mt: 1 }} />
@@ -721,6 +805,42 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
           </Grid>
         </Grid>
         <Divider sx={{ my: 3 }} />
+        
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: '#d32f2f' }}>Required Fields:</Typography>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12}>
+            <TextField 
+              label="Short Description"
+              name="description" 
+              value={newProject.description || ''} 
+              onChange={handleAddChange} 
+              onFocus={handleFocus}
+              multiline
+              minRows={2}
+              fullWidth 
+              variant="outlined"
+              inputProps={{ maxLength: PROJECT_CONSTRAINTS.description.maxLength }}
+              helperText={`${(newProject.description || '').length}/${PROJECT_CONSTRAINTS.description.maxLength} characters - Appears in project lists`}
+              error={(newProject.description || '').length > PROJECT_CONSTRAINTS.description.maxLength}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField 
+              label="Detailed Description"
+              name="detailedDescription" 
+              value={newProject.detailedDescription || ''} 
+              onChange={handleAddChange} 
+              onFocus={handleFocus}
+              multiline
+              minRows={3}
+              fullWidth 
+              variant="outlined"
+              inputProps={{ maxLength: PROJECT_CONSTRAINTS.detailedDescription.maxLength }}
+              helperText={`${(newProject.detailedDescription || '').length}/${PROJECT_CONSTRAINTS.detailedDescription.maxLength} characters - Full project details`}
+              error={(newProject.detailedDescription || '').length > PROJECT_CONSTRAINTS.detailedDescription.maxLength}
+            />
+          </Grid>
+        </Grid>
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Beginner Concepts</Typography>
         <Box sx={{ mb: 2 }}>
@@ -1011,10 +1131,10 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                       <TextField
                         label="Prerequisites (comma separated)"
                         name={`educationalContent.${level}.prerequisites`}
-                        value={prereqStrings[level]}
+                        value={editPrereqStrings[level]}
                         onChange={e => {
                           const value = e.target.value;
-                          setPrereqStrings(prev => ({ ...prev, [level]: value }));
+                          setEditPrereqStrings(prev => ({ ...prev, [level]: value }));
                         }}
                         fullWidth
                         margin="dense"
@@ -1091,7 +1211,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                       />
                                       {/* Preview for image/diagram/video */}
                                       {block.type === 'image' || block.type === 'diagram' ? (
-                                        <img src={block.url} alt={block.type} style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
+                                        <img src={normalizeImageUrl(block.url) || block.url} alt={block.type} style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
                                       ) : block.type === 'video' ? (
                                         <video src={block.url} controls style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
                                       ) : null}

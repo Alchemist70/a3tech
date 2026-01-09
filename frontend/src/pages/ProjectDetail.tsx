@@ -40,6 +40,7 @@ import type { Project as ProjectType } from '../types/Project';
 import type { ConceptBlock } from '../types/Project';
 import ReactMarkdown from 'react-markdown';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
+import BookmarkButton from '../components/BookmarkButton';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
@@ -158,7 +159,17 @@ function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme:
       );
     }
     if (block.type === 'image' || block.type === 'diagram') {
-      return <Box key={idx} sx={{ my: 2, textAlign: 'center' }}><img src={block.url} alt={block.type} style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} /></Box>;
+      // Normalize image URLs (handle relative uploads and localhost origins)
+      let imgSrc = block.url;
+      try {
+        // lazy-require to avoid circular imports in some build setups
+        // eslint-disable-next-line import/no-extraneous-dependencies
+        const normalizeImageUrl = require('../utils/normalizeImageUrl').default;
+        imgSrc = normalizeImageUrl(block.url) || block.url;
+      } catch (e) {
+        // fallback to original
+      }
+      return <Box key={idx} sx={{ my: 2, textAlign: 'center' }}><img src={imgSrc} alt={block.type} style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} /></Box>;
     }
     if (block.type === 'video') {
       // YouTube embed support
@@ -370,12 +381,17 @@ const ProjectDetail: React.FC = () => {
             boxShadow: theme.shadows[4],
           })}
         >
-          <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }}>
-            {project?.title || 'Untitled Project'}
-          </Typography>
-          <Typography variant="h6" color="inherit" paragraph sx={{ opacity: 0.95, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
-            {project?.description || 'No description available'}
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+            <Box>
+              <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }}>
+                {project?.title || 'Untitled Project'}
+              </Typography>
+              <Typography variant="h6" color="inherit" paragraph sx={{ opacity: 0.95, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
+                {project?.description || 'No description available'}
+              </Typography>
+            </Box>
+            {project?._id && <BookmarkButton itemId={project._id} itemType="project" size="large" />}
+          </Box>
           <Box sx={{ mb: 1 }}>
             {project?.technologies?.map((tech) => (
               <Chip key={tech} label={tech} sx={{ mr: 1, mb: 1 }} color="secondary" />

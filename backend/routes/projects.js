@@ -100,4 +100,16 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Bookmark routes
+const bookmarkController = require('../controllers/bookmarkController');
+
+// Toggle bookmark for a project
+router.post('/:projectId/bookmark', bookmarkController.toggleProjectBookmark);
+
+// Check if project is bookmarked
+router.get('/:projectId/bookmark-status', bookmarkController.isProjectBookmarked);
+
+// Get all bookmarked projects for user
+router.get('/bookmarks/list', bookmarkController.getProjectBookmarks);
+
 module.exports = router;

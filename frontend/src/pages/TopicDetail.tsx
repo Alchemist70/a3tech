@@ -8,6 +8,7 @@ import { Bar, Line } from 'react-chartjs-2';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialLight, materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
+import BookmarkButton from '../components/BookmarkButton';
 import jsPDF from 'jspdf';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Tooltip, Legend);
@@ -785,18 +786,23 @@ const TopicDetail: React.FC = () => {
           </Tabs>
           {tab === 0 && (
             <Box>
-              <Typography variant="h3" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }} color="primary.main">
-                {topic.name}
-              </Typography>
-              {td.description ? (
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
-                  {td.description}
-                </Typography>
-              ) : topic.content ? (
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
-                  {topic.content}
-                </Typography>
-              ) : null}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="h3" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' } }} color="primary.main">
+                    {topic.name}
+                  </Typography>
+                  {td.description ? (
+                    <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
+                      {td.description}
+                    </Typography>
+                  ) : topic.content ? (
+                    <Typography variant="h6" color="text.secondary" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}>
+                      {topic.content}
+                    </Typography>
+                  ) : null}
+                </Box>
+                {topic?._id && <BookmarkButton itemId={topic._id} itemType="knowledgeBase" size="large" />}
+              </Box>
               <Divider sx={{ my: 3 }} />
               {td.content ? (
                 <Box sx={{ fontSize: 18, lineHeight: 1.7, mb: 3 }}>
@@ -1823,14 +1829,14 @@ const TopicDetail: React.FC = () => {
                                     else if (img.type === 'blob' && img.data && img.mimeType) src = `data:${img.mimeType};base64,${img.data}`;
                                     else if (img.data && typeof img.data === 'string' && img.mimeType) src = `data:${img.mimeType};base64,${img.data}`;
                                     else if (img.fileUrl) {
-                                      // Normalize fileUrl to avoid mixed-content or protocol issues
+                                      // Normalize fileUrl to handle localhost-origin URLs and relative uploads
                                       try {
-                                        let s = img.fileUrl as string;
-                                        if (typeof window !== 'undefined' && s && s.startsWith('http')) {
-                                          // Make protocol-relative to avoid http->https mixed content blocks
-                                          s = s.replace(/^https?:/, '');
-                                        }
-                                        src = s;
+                                        // normalizeImageUrl will rewrite local backend hosts to configured API origin
+                                        // and prefix '/uploads' paths with backend origin.
+                                        // Keep protocol-relative and data/blob URLs unchanged.
+                                        // eslint-disable-next-line import/no-extraneous-dependencies
+                                        const normalizeImageUrl = require('../utils/normalizeImageUrl').default;
+                                        src = normalizeImageUrl(img.fileUrl) as string;
                                       } catch (e) {
                                         src = img.fileUrl;
                                       }

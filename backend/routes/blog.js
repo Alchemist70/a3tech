@@ -1,6 +1,8 @@
 const express = require('express');
 const blogController = require('../controllers/blogController');
 const blogEngagementController = require('../controllers/blogEngagementController');
+const bookmarkController = require('../controllers/bookmarkController');
+const blogCommentController = require('../controllers/blogCommentController');
 const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -24,6 +26,12 @@ router.post('/:blogId/like', authMiddleware, blogEngagementController.toggleBlog
 router.get('/:blogId/bookmark-status', authMiddleware, blogEngagementController.checkBlogBookmark);
 router.post('/:blogId/bookmark', authMiddleware, blogEngagementController.toggleBlogBookmark);
 router.get('/user/bookmarks', authMiddleware, blogEngagementController.getUserBookmarks);
+
+// Comments routes
+router.get('/:blogId/comments', blogCommentController.getBlogComments);
+router.post('/:blogId/comments', authMiddleware, blogCommentController.addBlogComment);
+router.put('/comments/:commentId', authMiddleware, blogCommentController.updateBlogComment);
+router.delete('/comments/:commentId', authMiddleware, blogCommentController.deleteBlogComment);
 
 // Admin routes (would need authentication middleware)
 // router.post('/', authMiddleware, adminMiddleware, createBlogPost);

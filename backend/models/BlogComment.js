@@ -34,85 +34,37 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const BlogPostSchema = new mongoose_1.Schema({
-    title: {
-        type: String,
-        required: true,
-        trim: true
+const BlogCommentSchema = new mongoose_1.Schema({
+    blogId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'BlogPost',
+        required: true
     },
-    slug: {
+    userId: {
         type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true
+        required: true
     },
-    excerpt: {
+    userName: {
         type: String,
-        required: true,
-        maxlength: 500
+        required: true
     },
     content: {
         type: String,
-        required: true
-    },
-    author: {
-        type: String,
         required: true,
-        default: 'Abdulhadi Abbas Akanni'
+        maxlength: 2000
     },
-    tags: [String],
-    category: {
-        type: String,
-        enum: ['technical', 'research', 'tutorial', 'insights', 'news'],
-        required: true
+    createdAt: {
+        type: Date,
+        default: Date.now
     },
-    featuredImage: String,
-    images: [String],
-    status: {
-        type: String,
-        enum: ['draft', 'published', 'archived'],
-        default: 'draft'
-    },
-    publishedAt: Date,
-    readTime: {
-        type: Number,
-        required: true,
-        min: 1
-    },
-    views: {
-        type: Number,
-        default: 0
-    },
-    likes: {
-        type: Number,
-        default: 0
-    },
-    toc: [String],
-    authorBio: String,
-    seoTitle: String,
-    seoDescription: String
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
 }, {
     timestamps: true
 });
-// Index for search functionality
-BlogPostSchema.index({
-    title: 'text',
-    content: 'text',
-    tags: 'text',
-    excerpt: 'text'
-});
-// Auto-generate slug from title
-BlogPostSchema.pre('save', function (next) {
-    if (this.isModified('title')) {
-        this.slug = this.title
-            .toLowerCase()
-            .replace(/[^a-z0-9 -]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .trim();
-    }
-    next();
-});
-exports.default = mongoose_1.default.model('BlogPost', BlogPostSchema);
-//# sourceMappingURL=BlogPost.js.map
+// Index for efficient querying by blog
+BlogCommentSchema.index({ blogId: 1, createdAt: -1 });
+exports.default = mongoose_1.default.model('BlogComment', BlogCommentSchema);
+//# sourceMappingURL=BlogComment.js.map

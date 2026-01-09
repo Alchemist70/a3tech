@@ -492,10 +492,32 @@ const createProject = async (req, res) => {
         if (error instanceof Error) {
             console.error('[createProject] Error stack:', error.stack);
         }
+        
+        // Extract detailed validation errors
+        let detailedErrors = {};
+        let errorMessage = 'Error creating project';
+        
+        if (error && typeof error === 'object') {
+            // Handle Mongoose ValidationError
+            if (error.name === 'ValidationError' && error.errors) {
+                errorMessage = 'Project validation failed';
+                Object.keys(error.errors).forEach(field => {
+                    const err = error.errors[field];
+                    detailedErrors[field] = err.message || String(err);
+                });
+            }
+            // Handle other errors
+            else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+        }
+        
         res.status(400).json({
             success: false,
-            message: 'Error creating project',
-            error: error instanceof Error ? error.message : String(error)
+            message: errorMessage,
+            error: error instanceof Error ? error.message : String(error),
+            details: Object.keys(detailedErrors).length > 0 ? detailedErrors : undefined,
+            validation: Object.keys(detailedErrors).length > 0 ? detailedErrors : undefined
         });
     }
 };

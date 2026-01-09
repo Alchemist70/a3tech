@@ -6,23 +6,30 @@ import { v4 as uuidv4 } from 'uuid';
 import TOCEditor from '../../components/admin/TOCEditor';
 import { Box as MuiBox } from '@mui/material';
 
-const AdminBlogDetail: React.FC = () => {
-  const [blogs, setBlogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const AdminBlogDetail: React.FC<{ blogs?: any[] }> = ({ blogs: blogsProp }) => {
+  const [blogs, setBlogs] = useState<any[]>(blogsProp || []);
+  const [loading, setLoading] = useState(!blogsProp);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editBuffer, setEditBuffer] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // If blogs prop is provided, use it
+    if (blogsProp && blogsProp.length > 0) {
+      setBlogs(blogsProp);
+      setLoading(false);
+      return;
+    }
+    
+    // Otherwise, fetch from API
     setLoading(true);
-    // Use the admin listing endpoint to fetch full blog documents (including content and drafts)
     api.get('/blog/admin')
       .then(res => {
         let data = Array.isArray(res.data?.data) ? res.data.data : [];
         data = data.map((blog: any) => {
           const b = { ...blog, id: blog._id || blog.id };
-          if (!b.uuid) b.uuid = uuidv4();
+          // Blog should have UUID from Blogs tab
           return b;
         });
         setBlogs(data);
@@ -32,7 +39,7 @@ const AdminBlogDetail: React.FC = () => {
         setError('Failed to load blogs');
         setLoading(false);
       });
-  }, []);
+  }, [blogsProp]);
 
   // Helper: decode HTML entities (e.g. &lt;p&gt;) into real HTML string
   const decodeHtmlEntities = (html: string) => {
@@ -214,6 +221,10 @@ const AdminBlogDetail: React.FC = () => {
       payload.readTime = Math.max(1, Number(payload.readTime) || 1);
       payload.views = Number(payload.views) || 0;
       payload.likes = Number(payload.likes) || 0;
+      // Ensure content is never empty (required field)
+      if (!payload.content || typeof payload.content !== 'string' || !payload.content.trim()) {
+        payload.content = '<p>Blog content goes here</p>';
+      }
 
       delete payload.id;
       if (payload._id && (typeof payload._id !== 'string' || payload._id.length !== 24 || !/^[a-fA-F0-9]{24}$/.test(payload._id))) {
@@ -282,7 +293,7 @@ const AdminBlogDetail: React.FC = () => {
             readTime: 1,
             views: 0,
             likes: 0,
-            uuid: uuidv4(),
+            uuid: '', // Admin must paste UUID from Blogs tab
             id: Date.now(),
           };
           setBlogs([newBlog, ...blogs]);
@@ -297,7 +308,7 @@ const AdminBlogDetail: React.FC = () => {
         <Paper key={blog.id || idx} sx={{ p: 3, mb: 3, position: 'relative' }}>
           {editingIndex === idx ? (
             <>
-              <TextField label="Blog UUID" value={editBuffer.uuid || ''} fullWidth InputProps={{ readOnly: true }} sx={{ mb: 2 }} />
+              <TextField label="Blog UUID (Copy from Blogs tab)" value={editBuffer.uuid || ''} onChange={e => handleChange('uuid', e.target.value)} fullWidth sx={{ mb: 2 }} helperText="Paste the UUID from the Blogs tab" />
               <TextField label="Slug" value={editBuffer.slug || ''} onChange={e => handleChange('slug', e.target.value)} fullWidth sx={{ mb: 2 }} />
               <TextField label="Title" value={editBuffer.title || ''} onChange={e => handleChange('title', e.target.value)} fullWidth sx={{ mb: 2 }} />
               <TextField label="Author" value={editBuffer.author || ''} onChange={e => handleChange('author', e.target.value)} fullWidth sx={{ mb: 2 }} />

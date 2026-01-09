@@ -2453,7 +2453,7 @@ const Admin: React.FC = () => {
         <ProjectDetailsTab projects={projects} onAddProject={onAddProject} onEditProject={onEditProject} onDeleteProject={onDeleteProject} />
       </TabPanel>
       <TabPanel value={tab} index={7}>
-        <AdminBlogDetail />
+        <AdminBlogDetail blogs={blogs} />
       </TabPanel>
       <TabPanel value={tab} index={8}>
         <AdminKnowledgeBaseTab />

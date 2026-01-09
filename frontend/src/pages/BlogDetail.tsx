@@ -9,6 +9,7 @@ import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import api from '../api';
 import ShareMenu from '../components/ShareMenu';
+import CommentSection from '../components/CommentSection';
 import { blogAPI } from '../api/blogAPI';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthModal } from '../contexts/AuthModalContext';
@@ -278,6 +279,9 @@ const BlogDetail: React.FC = () => {
           </Grid>
         </CardContent>
       </Card>
+
+      {/* Comments Section */}
+      {blog?._id && <CommentSection blogId={blog._id} isAuthenticated={isAuthenticated} />}
 
       {/* Snackbar for notifications */}
       <Snackbar
