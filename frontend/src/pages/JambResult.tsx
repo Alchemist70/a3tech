@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Container,
@@ -6,21 +6,18 @@ import {
   Button,
   Card,
   CardContent,
-  Divider,
   useTheme,
   useMediaQuery,
   alpha,
   Alert,
 } from '@mui/material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowBack, Download, Share } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 const JambResult: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
-  const { mockTestId } = useParams<{ mockTestId: string }>();
   const location = useLocation();
   const { user } = useAuth();
   const state = location.state as any;
@@ -44,7 +41,7 @@ const JambResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
-  const { grade, comment } = getGrade();
+  const { grade } = getGrade();
 
   return (
     <Box sx={{ minHeight: '100vh', background: theme.palette.background.default, py: { xs: 4, md: 8 } }}>

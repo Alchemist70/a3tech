@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Menu, MenuItem, IconButton, Tooltip } from '@mui/material';
+import { Menu, MenuItem, IconButton, Tooltip } from '@mui/material';
 import FunctionsIcon from '@mui/icons-material/Functions';
 
 const SYMBOLS = ['π','α','β','γ','Δ','θ','λ','μ','σ','Ω','∑','∫','√','∞','≈','≠','≤','≥','±','°'];

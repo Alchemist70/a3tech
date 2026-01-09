@@ -372,7 +372,7 @@ const JambTest: React.FC = () => {
     } else if (typeof img === 'string') {
       src = img;
     }
-    return src ? <img src={src} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }} /> : null;
+    return src ? <img src={src} alt="question content" style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }} /> : null;
   };
 
   const handlePrevious = () => {

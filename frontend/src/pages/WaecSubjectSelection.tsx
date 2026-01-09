@@ -40,7 +40,6 @@ const defaultWaecSubjects = [
 
 const WaecSubjectSelection: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['English Language', 'Mathematics']);

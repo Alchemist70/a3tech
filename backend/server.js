@@ -148,7 +148,7 @@ app.use(express_1.default.json({ limit: process.env.JSON_BODY_LIMIT || '20mb' })
 app.use(express_1.default.urlencoded({ extended: true, limit: process.env.JSON_BODY_LIMIT || '20mb' }));
 
 // Session configuration for Passport
-// Session configuration: use Redis when available to persist sessions across restarts
+// Session configuration: use MongoDB when available to persist sessions across restarts
 try {
     let sessionOptions = {
         secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
@@ -168,11 +168,20 @@ try {
         const redisClient = new Redis(process.env.REDIS_URL);
         sessionOptions.store = new RedisStore({ client: redisClient, prefix: 'sess:' });
         console.log('Using Redis session store in server');
+    } else if (process.env.MONGODB_URI || process.env.MONGO_URL) {
+        // Use MongoDB for session storage when Redis is not available
+        const MongoStore = require('connect-mongo');
+        const mongoUrl = process.env.MONGODB_URI || process.env.MONGO_URL;
+        sessionOptions.store = MongoStore.create({
+            mongoUrl: mongoUrl,
+            touchAfter: 24 * 3600 // lazy session update (in seconds)
+        });
+        console.log('Using MongoDB session store in server');
     }
 
     app.use(session(sessionOptions));
 } catch (e) {
-    console.warn('Failed to initialize Redis session store, falling back to MemoryStore:', e && e.message ? e.message : e);
+    console.warn('Failed to initialize session store, falling back to memory store:', e && e.message ? e.message : e);
     app.use(session({
         secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
         resave: false,

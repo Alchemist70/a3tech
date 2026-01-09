@@ -237,7 +237,7 @@ const AdminTopicDetailsTab: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const data = await safeDelete(`/topic-details/${id}`);
+      await safeDelete(`/topic-details/${id}`);
       setTopicDetails(topicDetails.filter(td => (td._id || td.id) !== id));
       setMessage('Topic detail deleted.');
       setSnackbarOpen(true);

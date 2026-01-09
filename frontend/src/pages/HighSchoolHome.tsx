@@ -5,16 +5,13 @@ import {
   Typography,
   Button,
   Grid,
-  Card,
-  CardContent,
   useTheme,
   useMediaQuery,
   alpha,
-  CircularProgress,
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowForward, School, EmojiEvents, MenuBook, TrendingUp, Description } from '@mui/icons-material';
+import { ArrowForward, School, EmojiEvents, MenuBook, Description } from '@mui/icons-material';
 import api from '../api';
 import { useAuth } from '../contexts/AuthContext';
 

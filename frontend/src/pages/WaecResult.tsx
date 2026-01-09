@@ -6,19 +6,17 @@ import {
   Button,
   Card,
   CardContent,
-  Divider,
   useTheme,
   useMediaQuery,
   alpha,
   Alert,
 } from '@mui/material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowBack, Download } from '@mui/icons-material';
+import { ArrowBack } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
 const WaecResult: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const location = useLocation();
@@ -98,7 +96,7 @@ const WaecResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
-  const { grade, comment } = getGrade();
+  const { grade } = getGrade();
 
   
 

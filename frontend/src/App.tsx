@@ -38,7 +38,6 @@ import Subscription from './pages/Subscription';
 import Payment from './pages/Payment';
 import Sidebar from './components/Sidebar';
 import AuthCallback from './pages/AuthCallback';
-import HighSchoolHome from './pages/HighSchoolHome';
 import WaecTopics from './pages/WaecTopics';
 import JambTopics from './pages/JambTopics';
 import JambMockTestStart from './pages/JambMockTestStart';

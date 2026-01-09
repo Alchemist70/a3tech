@@ -6,13 +6,13 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   useTheme,
   useMediaQuery,
   alpha,
   Divider,
   Alert,
+  Chip,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowBack, PlayArrow } from '@mui/icons-material';
@@ -22,7 +22,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 const WaecTestInstructions: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const { user } = useAuth();

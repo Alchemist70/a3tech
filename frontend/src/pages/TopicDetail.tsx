@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, Breadcrumbs, Link, CircularProgress, Paper, Divider, Tabs, Tab, Button, useTheme, Table as MuiTable, TableHead, TableBody, TableRow, TableCell, Card, CardContent, Grid } from '@mui/material';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialLight, materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
@@ -1268,7 +1268,6 @@ const TopicDetail: React.FC = () => {
                                   {(() => {
                                     const ds = _chart.datasets?.[0] || { data: [], backgroundColor: undefined } as any;
                                     const total = (ds.data || []).reduce((a: number, b: number) => a + b, 0) || 1;
-                                    const labelsLen = (_chart.labels || []).length;
                                   const getColor = (i: number) => {
                                     if (Array.isArray(ds.backgroundColor)) return ds.backgroundColor[i] || '#1976d2';
                                     if (typeof ds.backgroundColor === 'string' && ds.backgroundColor.includes(',')) {
@@ -1640,7 +1639,6 @@ const TopicDetail: React.FC = () => {
                       <Box>
                         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 3 }}>Knowledge Check</Typography>
                         {(() => {
-                          const totalPages = Math.ceil(td.quizzes.length / practicePageSize);
                           const startIdx = practicePageIndex * practicePageSize;
                           const endIdx = startIdx + practicePageSize;
                           const paginatedQuizzes = td.quizzes.slice(startIdx, endIdx);

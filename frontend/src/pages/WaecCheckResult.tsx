@@ -23,7 +23,6 @@ import api from '../api';
 
 const WaecCheckResult: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const [examId, setExamId] = useState('');
   const [loading, setLoading] = useState(false);

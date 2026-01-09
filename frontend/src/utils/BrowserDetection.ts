@@ -257,7 +257,7 @@ export const detectSuspiciousExtensions = (): string[] => {
   const suspiciousExtensions: string[] = [];
 
   // Check for known suspicious extensions
-  const suspiciousKeywords = [
+  const _suspiciousKeywords = [
     'vpn',
     'proxy',
     'anonymizer',
@@ -303,20 +303,17 @@ export const performSecurityAssessment = async (): Promise<{
   const extensions = detectSuspiciousExtensions();
 
   let issues: string[] = [];
-  let overallRiskScore = browserRisk.score;
 
   // Add warnings
   issues.push(...browserRisk.warnings);
 
   // Virtual environment
   if (isVirtual) {
-    overallRiskScore += 25;
     issues.push('Virtual machine or emulator detected');
   }
 
   // Suspicious extensions
   if (extensions.length > 0) {
-    overallRiskScore += 20;
     issues.push(...extensions);
   }
 

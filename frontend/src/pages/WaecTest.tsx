@@ -27,7 +27,6 @@ import PreflightChecks from '../components/PreflightChecks';
 
 const WaecTest: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const { user } = useAuth();

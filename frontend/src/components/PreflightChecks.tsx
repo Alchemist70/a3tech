@@ -36,10 +36,6 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  useEffect(() => {
-    runPreflightChecks();
-  }, []);
-
   // Note: Fullscreen is maintained by the parent JambTest/WaecTest component.
   // Do not request fullscreen here as setInterval callbacks lack user gesture context,
   // which violates the requestFullscreen() API requirements.
@@ -290,6 +286,10 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
       onComplete(false);
     }
   };
+
+  useEffect(() => {
+    runPreflightChecks();
+  }, []);
 
   const handleRetry = async () => {
     if (retryCount < DEFAULT_PROCTOR_THRESHOLDS.maxPreflightRetries) {

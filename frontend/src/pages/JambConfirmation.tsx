@@ -6,13 +6,8 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   CircularProgress,
-  TextField,
   useTheme,
   useMediaQuery,
   alpha,
@@ -27,7 +22,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 const JambConfirmation: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { mockTestId } = useParams<{ mockTestId: string }>();
   const { user } = useAuth();

@@ -18,7 +18,7 @@ import {
   alpha,
   Chip,
 } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowForward, ArrowBack } from '@mui/icons-material';
 import api from '../api';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,7 +38,6 @@ const defaultJambSubjects = [
 
 const JambSubjectSelection: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['Use of English']);
