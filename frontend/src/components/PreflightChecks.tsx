@@ -346,7 +346,8 @@ export const PreflightChecks: React.FC<PreflightChecksProps> = ({
 
       // Try requesting fullscreen in the same user gesture if possible
       // Fullscreen request MUST happen in a user-gesture context (which this is)
-      let isInFullscreen = false;
+         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         let isInFullscreen = false;
       try {
         const elem = document.documentElement;
         if (elem.requestFullscreen) {

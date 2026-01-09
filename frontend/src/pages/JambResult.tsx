@@ -40,6 +40,7 @@ const JambResult: React.FC = () => {
     return { grade: 'E', comment: 'Needs Improvement' };
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { grade: userGrade } = getGrade();
 
   return (

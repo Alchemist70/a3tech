@@ -185,6 +185,7 @@ const AdminJambQuestionBankTab: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteQuestion = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
       try {

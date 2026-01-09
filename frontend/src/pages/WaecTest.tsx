@@ -51,6 +51,7 @@ const WaecTest: React.FC = () => {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [phaseStarted, setPhaseStarted] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [currentPhase, setCurrentPhase] = useState(1);
   // Fullscreen violation tracking (mirror JAMB logic)
   const [violationCount, setViolationCount] = useState<number>(() => {

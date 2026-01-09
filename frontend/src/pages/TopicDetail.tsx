@@ -347,6 +347,7 @@ const TopicDetail: React.FC = () => {
 
   // Selection state for practice quizzes: map quiz index -> selected option index
   const [selectedMap, setSelectedMap] = useState<Record<number, number | null>>({});
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [feedbackMap, setFeedbackMap] = useState<Record<number, { text: string; correct: boolean } | null>>({});
   const [practicePageIndex, setPracticePageIndex] = useState(0);
   const practicePageSize = 5;

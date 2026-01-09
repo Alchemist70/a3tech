@@ -25,6 +25,7 @@ const JambInstructions: React.FC = () => {
   const [countdown, setCountdown] = useState(10);
   const [testStarted, setTestStarted] = useState(false);
   const [mockTestData, setMockTestData] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
