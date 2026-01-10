@@ -421,6 +421,23 @@ const Admin: React.FC = () => {
           }
         : proj
     ));
+    // Refetch latest projects from backend to ensure deployed admin always shows fresh data
+    api.get('/projects')
+      .then(res => {
+        let data: any[] = [];
+        if (Array.isArray(res.data?.projects)) {
+          data = res.data.projects;
+        } else if (Array.isArray(res.data?.data)) {
+          data = res.data.data;
+        } else if (Array.isArray(res.data)) {
+          data = res.data;
+        }
+        if (data.length > 0) {
+          data = data.map((proj: any) => ({ ...proj, id: proj._id || proj.id }));
+          setProjects(data);
+        }
+      })
+      .catch(err => console.error('Failed to refetch projects after edit:', err));
   };
 
   const onDeleteProject = (projectId: string | number) => {

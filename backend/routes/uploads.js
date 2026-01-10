@@ -26,7 +26,19 @@ router.post('/', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const filename = req.file.filename;
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    // Construct fileUrl: use BACKEND_PUBLIC_URL env var if available (for deployed environments),
+    // otherwise fall back to req protocol/host (for local dev). This ensures the frontend can
+    // access uploaded files regardless of proxy/reverse proxy setup.
+    const backendPublicUrl = process.env.BACKEND_PUBLIC_URL || process.env.API_PUBLIC_URL || '';
+    let fileUrl;
+    if (backendPublicUrl) {
+      // Use explicitly configured public backend URL
+      const base = String(backendPublicUrl).trim();
+      fileUrl = base.endsWith('/') ? `${base}uploads/${filename}` : `${base}/uploads/${filename}`;
+    } else {
+      // Fall back to dynamic construction from request (local dev)
+      fileUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    }
     return res.json({ success: true, data: { fileUrl, filename } });
   } catch (err) {
     console.error('upload error', err);
