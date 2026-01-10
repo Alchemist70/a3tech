@@ -12,6 +12,58 @@ exports.getTopics = async (req, res) => {
   }
 };
 
+// Create a new topic (admin)
+exports.createTopic = async (req, res) => {
+  try {
+    const { name, subjectId, slug } = req.body || {};
+    if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug required' });
+
+    // check unique slug
+    const existing = await Topic.findOne({ slug });
+    if (existing) return res.status(400).json({ success: false, message: 'Slug already exists' });
+
+    const uuid = `topic-${Date.now()}-${Math.floor(Math.random()*10000)}`;
+    const topic = new Topic({ name: String(name).trim(), slug: String(slug).trim(), subjectId: subjectId || '', uuid });
+    await topic.save();
+    return res.json({ success: true, data: topic });
+  } catch (err) {
+    console.error('Error creating topic:', err);
+    return res.status(500).json({ success: false, message: 'Error creating topic' });
+  }
+};
+
+// Update existing topic (admin)
+exports.updateTopic = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name, subjectId, slug } = req.body || {};
+    if (!name || !slug) return res.status(400).json({ success: false, message: 'Name and slug required' });
+
+    const existing = await Topic.findOne({ slug, _id: { $ne: id } });
+    if (existing) return res.status(400).json({ success: false, message: 'Slug already exists' });
+
+    const topic = await Topic.findByIdAndUpdate(id, { name: String(name).trim(), slug: String(slug).trim(), subjectId: subjectId || '' }, { new: true });
+    if (!topic) return res.status(404).json({ success: false, message: 'Topic not found' });
+    return res.json({ success: true, data: topic });
+  } catch (err) {
+    console.error('Error updating topic:', err);
+    return res.status(500).json({ success: false, message: 'Error updating topic' });
+  }
+};
+
+// Delete topic (admin)
+exports.deleteTopic = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const topic = await Topic.findByIdAndDelete(id);
+    if (!topic) return res.status(404).json({ success: false, message: 'Topic not found' });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting topic:', err);
+    return res.status(500).json({ success: false, message: 'Error deleting topic' });
+  }
+};
+
 exports.getTopicBySlug = async (req, res) => {
   try {
     const { slug } = req.params;

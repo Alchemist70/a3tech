@@ -61,6 +61,17 @@ const AdminTopicsTab: React.FC = () => {
     fetchData();
   }, []);
 
+  // Auto-generate slug from topic name when user hasn't entered one
+  useEffect(() => {
+    if (!newSlug && newTopic) {
+      const generated = String(newTopic).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      setNewSlug(generated);
+    }
+    if (!newTopic) {
+      setNewSlug('');
+    }
+  }, [newTopic]);
+
   const handleAdd = async () => {
     if (!newTopic.trim() || !newSubjectId || !newSlug.trim()) {
       alert('Please enter a topic name and a unique, non-empty slug.');
@@ -144,7 +155,7 @@ const AdminTopicsTab: React.FC = () => {
   return (
     <Box>
       <Typography variant="h6" gutterBottom>Manage Topics</Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
         <Select
           value={newSubjectId}
           onChange={e => setNewSubjectId(e.target.value as string)}
@@ -162,6 +173,14 @@ const AdminTopicsTab: React.FC = () => {
           size="small"
           disabled={subjects.length === 0}
           helperText={subjects.length === 0 ? 'Add a subject first.' : ''}
+        />
+        <TextField
+          label="Slug"
+          value={newSlug}
+          onChange={e => setNewSlug(e.target.value)}
+          size="small"
+          disabled={subjects.length === 0}
+          helperText="Optional — auto-generated from name if left blank"
         />
         <Button variant="contained" onClick={handleAdd} disabled={subjects.length === 0}>Add</Button>
       </Box>

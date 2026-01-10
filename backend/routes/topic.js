@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { getTopics, getTopicBySlug } = require('../controllers/topicController');
+const topicController = require('../controllers/topicController');
+const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
 
-router.get('/', getTopics);
-router.get('/:slug', getTopicBySlug);
+// Public
+router.get('/', topicController.getTopics);
+router.get('/:slug', topicController.getTopicBySlug);
 
-module.exports = router;
-// const express = require('express');
-
-
-router.get('/', (req, res) => {
-  res.json({ success: true, topics: [] });
-});
+// Admin (create/update/delete)
+router.post('/', authMiddleware, adminMiddleware, topicController.createTopic);
+router.put('/:id', authMiddleware, adminMiddleware, topicController.updateTopic);
+router.delete('/:id', authMiddleware, adminMiddleware, topicController.deleteTopic);
 
 module.exports = router;
