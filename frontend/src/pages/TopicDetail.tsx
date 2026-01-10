@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import EnhancedMarkdown from '../components/EnhancedMarkdown';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, Breadcrumbs, Link, CircularProgress, Paper, Divider, Tabs, Tab, Button, useTheme, Table as MuiTable, TableHead, TableBody, TableRow, TableCell, Card, CardContent, Grid } from '@mui/material';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -806,11 +806,11 @@ const TopicDetail: React.FC = () => {
               <Divider sx={{ my: 3 }} />
               {td.content ? (
                 <Box sx={{ fontSize: 18, lineHeight: 1.7, mb: 3 }}>
-                  <ReactMarkdown>{td.content}</ReactMarkdown>
+                  <EnhancedMarkdown>{td.content}</EnhancedMarkdown>
                 </Box>
               ) : topic.content ? (
                 <Box sx={{ fontSize: 18, lineHeight: 1.7, mb: 3 }}>
-                  <ReactMarkdown>{topic.content}</ReactMarkdown>
+                  <EnhancedMarkdown>{topic.content}</EnhancedMarkdown>
                 </Box>
               ) : null}
               {/* Images */}
@@ -918,7 +918,7 @@ const TopicDetail: React.FC = () => {
                             <Box key={idx} sx={{ mb: 2 }}>
                               {block.type === 'text' && (
                                 <Box sx={{ fontSize: 18, lineHeight: 1.7 }}>
-                                  <ReactMarkdown>{block.value}</ReactMarkdown>
+                                  <EnhancedMarkdown>{block.value}</EnhancedMarkdown>
                                 </Box>
                               )}
                     {block.type === 'image' && <img src={block.value} alt="" style={{ maxWidth: 320, borderRadius: 8, boxShadow: '0 2px 8px #0001' }} />}
@@ -1094,7 +1094,7 @@ const TopicDetail: React.FC = () => {
                         </Box>
                       ) : (
                         <Box sx={{ fontSize: 18, lineHeight: 1.7, mb: 3 }}>
-                          <ReactMarkdown>{lesson.content}</ReactMarkdown>
+                          <EnhancedMarkdown>{lesson.content}</EnhancedMarkdown>
                         </Box>
                       )}
                       {/* Images */}

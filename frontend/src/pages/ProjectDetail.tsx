@@ -38,7 +38,7 @@ import { useVisitTracker } from '../hooks/useVisitTracker';
 import api from '../api';
 import type { Project as ProjectType } from '../types/Project';
 import type { ConceptBlock } from '../types/Project';
-import ReactMarkdown from 'react-markdown';
+import EnhancedMarkdown from '../components/EnhancedMarkdown';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
 import BookmarkButton from '../components/BookmarkButton';
 
@@ -138,23 +138,7 @@ function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme:
     if (block.type === 'text') {
       return (
         <Box key={idx} sx={{ mb: 2 }}>
-          <ReactMarkdown
-            components={{
-              h1: (props: any) => <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }} {...props} />,
-              h2: (props: any) => <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }} {...props} />,
-              h3: (props: any) => <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }} {...props} />,
-              p: (props: any) => <Typography variant="body1" sx={{ mb: 2 }} {...props} />,
-              ul: (props: any) => <ul style={{ marginLeft: 24, marginBottom: 12 }}>{props.children}</ul>,
-              ol: (props: any) => <ol style={{ marginLeft: 24, marginBottom: 12 }}>{props.children}</ol>,
-              li: (props: any) => <li style={{ marginBottom: 6 }}>{props.children}</li>,
-              strong: (props: any) => <strong style={{ fontWeight: 700 }}>{props.children}</strong>,
-              em: (props: any) => <em style={{ fontStyle: 'italic' }}>{props.children}</em>,
-              blockquote: (props: any) => <blockquote style={{ borderLeft: `4px solid ${isDark ? '#475569' : '#ccc'}`, margin: '12px 0', padding: '8px 16px', color: isDark ? '#cbd5e1' : '#555', background: isDark ? 'rgba(30, 41, 59, 0.5)' : '#f9f9f9' }}>{props.children}</blockquote>,
-              code: (props: any) => <code style={{ background: isDark ? 'rgba(15, 23, 42, 0.8)' : '#eee', color: isDark ? '#f1f5f9' : 'inherit', borderRadius: 4, padding: '2px 6px', fontSize: '90%' }}>{props.children}</code>,
-            }}
-          >
-            {block.content}
-          </ReactMarkdown>
+          <EnhancedMarkdown isDark={isDark}>{block.content}</EnhancedMarkdown>
         </Box>
       );
     }
@@ -523,7 +507,7 @@ const ProjectDetail: React.FC = () => {
               {tabValue === 0 && (
                 <Box>
                   <Box sx={{ mb: 3 }}>
-                    <ReactMarkdown>{currentContent.overview || 'No overview available.'}</ReactMarkdown>
+                    <EnhancedMarkdown>{currentContent.overview || 'No overview available.'}</EnhancedMarkdown>
                   </Box>
                   <Box sx={{ mb: 4 }}>
                     <Typography variant="h6" gutterBottom>
