@@ -522,9 +522,9 @@ const ProjectDetail: React.FC = () => {
               {/* Overview Tab */}
               {tabValue === 0 && (
                 <Box>
-                  <Typography variant="body1" paragraph>
-                    {currentContent.overview || 'No overview available.'}
-                  </Typography>
+                  <Box sx={{ mb: 3 }}>
+                    <ReactMarkdown>{currentContent.overview || 'No overview available.'}</ReactMarkdown>
+                  </Box>
                   <Box sx={{ mb: 4 }}>
                     <Typography variant="h6" gutterBottom>
                       Prerequisites
