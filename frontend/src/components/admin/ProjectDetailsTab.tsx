@@ -419,25 +419,70 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
 
   const handleEdit = (idx: number) => {
     setEditIndex(idx);
-    // Ensure the edit project always has a normalized educationalContent shape
     const base = projects[idx] || {} as Project;
-    const normalizedEditProject = {
-      ...base,
-      educationalContent: {
-        ...emptyProject.educationalContent,
-        ...(base.educationalContent || {})
-      }
-    } as Project;
-    setEditProject(normalizedEditProject);
-    // Rehydrate prereqStrings for the edit form (use safe access)
-    const project = normalizedEditProject;
-    const editPrereqObj = {} as Record<Level, string>;
-    levels.forEach(l => {
-      const lvl = project.educationalContent?.[l] || emptyProject.educationalContent[l];
-      editPrereqObj[l] = Array.isArray(lvl.prerequisites) ? lvl.prerequisites.join(', ') : '';
-    });
-    setPrereqStrings(editPrereqObj);
+    const projectId = base._id || base.id;
+    
+    console.log(`[handleEdit] Opening edit for project ${projectId}, base has educationalContent:`, !!base.educationalContent);
+    
+    // For admin editing, we need to fetch the full project including educationalContent
+    // because the projects list excludes educationalContent
+    if (projectId) {
+      api.get(`/projects/${projectId}`)
+        .then(res => {
+          if (res.data?.data) {
+            const fullProject = res.data.data;
+            console.log(`[handleEdit] Fetched full project, educationalContent:`, fullProject.educationalContent);
+            const normalizedEditProject = {
+              ...fullProject,
+              educationalContent: {
+                ...emptyProject.educationalContent,
+                ...(fullProject.educationalContent || {})
+              }
+            } as Project;
+            setEditProject(normalizedEditProject);
+            
+            // Rehydrate prereqStrings, resourceStrings, and quizStrings from the fetched project
+            const project = normalizedEditProject;
+            const editPrereqObj = {} as Record<Level, string>;
+            const editResObj = {} as Record<Level, string>;
+            const editQuizObj = {} as Record<Level, string>;
+            levels.forEach(l => {
+              const lvl = project.educationalContent?.[l] || emptyProject.educationalContent[l];
+              editPrereqObj[l] = Array.isArray(lvl.prerequisites) ? lvl.prerequisites.join(', ') : '';
+              editResObj[l] = arrayToResourceString(lvl.resources || []);
+              editQuizObj[l] = arrayToQuizString(lvl.quizzes || []);
+            });
+            setEditPrereqStrings(editPrereqObj);
+            setEditResourceStrings(editResObj);
+            setEditQuizStrings(editQuizObj);
+            console.log(`[handleEdit] Edit form populated with project data`);
+          }
+        })
+        .catch(err => {
+          console.error('[handleEdit] Failed to fetch full project for editing:', err);
+          // Fallback to using what we have in projects array
+          const normalizedEditProject = {
+            ...base,
+            educationalContent: {
+              ...emptyProject.educationalContent,
+              ...(base.educationalContent || {})
+            }
+          } as Project;
+          setEditProject(normalizedEditProject);
+        });
+    } else {
+      // No project ID, use fallback
+      const normalizedEditProject = {
+        ...base,
+        educationalContent: {
+          ...emptyProject.educationalContent,
+          ...(base.educationalContent || {})
+        }
+      } as Project;
+      setEditProject(normalizedEditProject);
+    }
   };
+
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (!editProject) return;
     const { name, value: rawValue, type, checked } = e.target as HTMLInputElement;
@@ -545,15 +590,20 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     try {
       const formData = new FormData();
       formData.append('file', file);
+      console.log(`[handleConceptBlockFileUpload] Uploading ${blockType} for concept ${conceptIdx}, block ${blockIdx}`);
       const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      console.log(`[handleConceptBlockFileUpload] Upload response:`, res.data);
       const fileUrl = res.data?.data?.fileUrl || res.data?.fileUrl;
+      console.log(`[handleConceptBlockFileUpload] Extracted fileUrl:`, fileUrl);
       if (fileUrl) {
         setEditProject(prev => {
           if (!prev) return prev;
           const concepts = Array.isArray(prev.educationalContent[levelKey].concepts) ? [...prev.educationalContent[levelKey].concepts] : [];
           const desc = Array.isArray(concepts[conceptIdx]?.description) ? [...concepts[conceptIdx].description] : [];
-          desc[blockIdx] = { type: blockType as 'image' | 'video' | 'diagram', url: fileUrl };
+          const blockObj = { type: blockType as 'image' | 'video' | 'diagram', url: fileUrl };
+          desc[blockIdx] = blockObj;
           concepts[conceptIdx] = { ...concepts[conceptIdx], description: desc };
+          console.log(`[handleConceptBlockFileUpload] Updated editProject with block:`, blockObj);
           return {
             ...prev,
             educationalContent: {
@@ -565,6 +615,9 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
             }
           } as typeof prev;
         });
+      } else {
+        console.error('[handleConceptBlockFileUpload] No fileUrl in response');
+        alert('Upload succeeded but no file URL returned');
       }
     } catch (err) {
       console.error('Concept image upload failed', err);

@@ -143,14 +143,18 @@ const getProjectById = async (req, res) => {
         const out = project.toObject ? project.toObject() : project;
         out.educationalContent = mapEducationalContent(out.educationalContent);
 
-        // If user is present and is subscribed or is a gold member => full access
+        // If user is present, check their access level
         let isGold = false;
         if (user) {
+            // ADMIN always get full access
+            if (user.role === 'admin') return res.json({ success: true, data: out });
+            // Subscribed users get full access
             if (user.isSubscribed) return res.json({ success: true, data: out });
+            // Check for gold member status
             const gm = await GoldMember.findOne({ email: user.email });
             if (gm) isGold = true;
             if (isGold) return res.json({ success: true, data: out });
-            // logged-in but not subscribed: restrict to first content only
+            // logged-in but not subscribed/admin/gold: restrict to first content only
             // We'll provide only the top-level fields and beginner overview as "first content"
             const limited = {
                 _id: out._id,
