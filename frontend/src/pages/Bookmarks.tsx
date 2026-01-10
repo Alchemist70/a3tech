@@ -26,18 +26,18 @@ const Bookmarks: React.FC = () => {
       return;
     }
 
-    const fetchBookmarks = async () => {
-      setLoading(true);
-      try {
-        const data = await blogAPI.getBookmarks();
-        setBookmarks(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Error fetching bookmarks:', err);
-        setBookmarks([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const fetchBookmarks = async () => {
+        setLoading(true);
+        try {
+          const data = await blogAPI.getBookmarks();
+          setBookmarks(Array.isArray(data) ? data : []);
+        } catch (err) {
+          console.error('Error fetching bookmarks:', err);
+          setBookmarks([]);
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchBookmarks();
   }, [isAuthenticated, navigate, openLogin]);
@@ -45,8 +45,15 @@ const Bookmarks: React.FC = () => {
   const handleRemoveBookmark = async (bookmark: any) => {
     setDeleting(true);
     try {
-      const blogId = bookmark.blogId?._id || bookmark.blogId;
-      await blogAPI.toggleBookmark(blogId, bookmark.title || '', bookmark.blogId?.slug || bookmark.slug || '');
+      if (bookmark.type === 'project') {
+        await blogAPI.toggleProjectBookmark(bookmark.resourceId);
+      } else if (bookmark.type === 'knowledgeBase') {
+        await blogAPI.toggleKnowledgeBaseBookmark(bookmark.resourceId);
+      } else {
+        // default to blog
+        await blogAPI.toggleBookmark(bookmark.resourceId, bookmark.title || '', bookmark.slug || '');
+      }
+
       setBookmarks((prev) => prev.filter(b => b._id !== bookmark._id));
       setSnackbarMessage('Bookmark removed');
       setSnackbarSeverity('success');
@@ -78,8 +85,25 @@ const Bookmarks: React.FC = () => {
     setDeleteDialogOpen(false);
   };
 
-  const handleViewBlog = (slug: string) => {
-    navigate(`/blog/${slug}`);
+  const handleOpenBookmark = (bookmark: any) => {
+    if (bookmark.type === 'project') {
+      navigate(`/projects/${encodeURIComponent(String(bookmark.resourceId))}`);
+      return;
+    }
+
+    if (bookmark.type === 'knowledgeBase') {
+      if (bookmark.subjectSlug && bookmark.slug) {
+        navigate(`/knowledge-base/${bookmark.subjectSlug}/${bookmark.slug}`);
+      } else if (bookmark.slug) {
+        navigate(`/knowledge-base/${bookmark.slug}`);
+      } else {
+        navigate('/knowledge-base');
+      }
+      return;
+    }
+
+    // default -> blog
+    navigate(`/blog/${bookmark.slug}`);
   };
 
   if (loading) {
@@ -154,7 +178,7 @@ const Bookmarks: React.FC = () => {
                       color="primary"
                       size="small"
                       fullWidth
-                      onClick={() => handleViewBlog(bookmark.blogId?.slug || bookmark.slug)}
+                      onClick={() => handleOpenBookmark(bookmark)}
                       sx={{ textTransform: 'none' }}
                     >
                       Read
