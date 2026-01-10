@@ -96,13 +96,13 @@ export const blogAPI = {
         (kbRes.data || []).forEach((k: any) => {
           kbItems.push({
             _id: k._id,
-            title: k.knowledgeBaseId?.title || k.title || 'Untitled',
-            description: k.knowledgeBaseId?.description || k.description || '',
+            title: k.knowledgeBaseId?.name || k.title || 'Untitled',
+            description: k.knowledgeBaseId?.content || k.description || '',
             bookmarkedAt: k.createdAt || k.updatedAt,
             type: 'knowledgeBase',
             resourceId: k.knowledgeBaseId?._id || k.knowledgeBaseId,
-            slug: k.knowledgeBaseId?.slug || k.knowledgeBaseId?.topicSlug || '',
-            subjectSlug: k.knowledgeBaseId?.subjectSlug || ''
+            slug: k.knowledgeBaseId?.slug || '',
+            subjectSlug: k.knowledgeBaseId?.subjectId || ''
           });
         });
       } catch (e) {

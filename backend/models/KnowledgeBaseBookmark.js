@@ -41,7 +41,7 @@ const KnowledgeBaseBookmarkSchema = new mongoose_1.Schema({
     },
     knowledgeBaseId: {
         type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'KnowledgeBase',
+        ref: 'Topic',
         required: true
     }
 }, {

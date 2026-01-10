@@ -65,7 +65,14 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
         const newState = Boolean(data.bookmarked ?? data.isBookmarked ?? (data.success && data.isBookmarked));
         setBookmarked(newState);
         if (onToggle) onToggle(newState);
-      } catch (err) {
+      } catch (err: any) {
+        // If server reports unauthenticated, prompt login modal so user can sign in
+        const status = err?.response?.status;
+        const respData = err?.response?.data || {};
+        if (status === 401 || String(respData?.error || '').toLowerCase().includes('not authenticated')) {
+          try { openLogin && openLogin(); } catch (e) {}
+          return;
+        }
         console.error('Error toggling bookmark:', err);
       }
     } catch (error) {

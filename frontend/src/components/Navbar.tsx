@@ -122,13 +122,14 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
             }}
           >
             <img 
-              src={process.env.PUBLIC_URL + '/favicon.png'} 
+              src={`${process.env.PUBLIC_URL}/logotech.png`} 
               alt="A3 Logo" 
               style={{ 
                 height: isMobile ? 32 : 45, 
                 width: isMobile ? 32 : 45, 
                 marginRight: isMobile ? 6 : 12, 
-                filter: 'brightness(1.2) drop-shadow(0 0 1px rgba(255,255,255,0.3))' 
+                filter: 'brightness(0.8) contrast(1.2) drop-shadow(0 2px 3px rgba(0,0,0,0.4))',
+                objectFit: 'contain'
               }} 
             />
             <Typography
