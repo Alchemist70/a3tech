@@ -1,11 +1,11 @@
-const ProjectBookmark = require('../models/ProjectBookmark');
-const KnowledgeBaseBookmark = require('../models/KnowledgeBaseBookmark');
+const ProjectBookmark = require('../models/ProjectBookmark').default;
+const KnowledgeBaseBookmark = require('../models/KnowledgeBaseBookmark').default;
 
 // Project Bookmarks
 exports.toggleProjectBookmark = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.status(401).json({ error: 'User not authenticated' });
@@ -36,7 +36,7 @@ exports.toggleProjectBookmark = async (req, res) => {
 
 exports.getProjectBookmarks = async (req, res) => {
     try {
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.status(401).json({ error: 'User not authenticated' });
@@ -53,7 +53,7 @@ exports.getProjectBookmarks = async (req, res) => {
 exports.isProjectBookmarked = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.json({ bookmarked: false });
@@ -71,7 +71,7 @@ exports.isProjectBookmarked = async (req, res) => {
 exports.toggleKnowledgeBaseBookmark = async (req, res) => {
     try {
         const { knowledgeBaseId } = req.params;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.status(401).json({ error: 'User not authenticated' });
@@ -102,7 +102,7 @@ exports.toggleKnowledgeBaseBookmark = async (req, res) => {
 
 exports.getKnowledgeBaseBookmarks = async (req, res) => {
     try {
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.status(401).json({ error: 'User not authenticated' });
@@ -119,7 +119,7 @@ exports.getKnowledgeBaseBookmarks = async (req, res) => {
 exports.isKnowledgeBaseBookmarked = async (req, res) => {
     try {
         const { knowledgeBaseId } = req.params;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!userId) {
             return res.json({ bookmarked: false });

@@ -461,7 +461,7 @@ const Admin: React.FC = () => {
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
-  const [blogs, setBlogs] = useState<Blog[]>(initialBlogs);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
   const [blogsLoading, setBlogsLoading] = useState(false);
   const [blogsError, setBlogsError] = useState<string | null>(null);
   const [blogsSuccess, setBlogsSuccess] = useState<string | null>(null);

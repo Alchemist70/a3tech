@@ -3,6 +3,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const router = express.Router();
 const projectController = require('../controllers/projectController');
+const authMiddleware = require('../middleware/authMiddleware');
 const fs = require('fs');
 const Project = require('../models/Project');
 
@@ -104,12 +105,12 @@ router.delete('/:id', async (req, res) => {
 const bookmarkController = require('../controllers/bookmarkController');
 
 // Toggle bookmark for a project
-router.post('/:projectId/bookmark', bookmarkController.toggleProjectBookmark);
+router.post('/:projectId/bookmark', authMiddleware, bookmarkController.toggleProjectBookmark);
 
 // Check if project is bookmarked
-router.get('/:projectId/bookmark-status', bookmarkController.isProjectBookmarked);
+router.get('/:projectId/bookmark-status', authMiddleware, bookmarkController.isProjectBookmarked);
 
 // Get all bookmarked projects for user
-router.get('/bookmarks/list', bookmarkController.getProjectBookmarks);
+router.get('/bookmarks/list', authMiddleware, bookmarkController.getProjectBookmarks);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const BlogComment = require('../models/BlogComment');
+const BlogComment = require('../models/BlogComment').default;
 
 // Get all comments for a blog post
 exports.getBlogComments = async (req, res) => {
@@ -25,7 +25,7 @@ exports.addBlogComment = async (req, res) => {
     try {
         const { blogId } = req.params;
         const { content } = req.body;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
         const userName = req.user?.name || req.headers['x-user-name'] || 'Anonymous';
 
         if (!blogId) {
@@ -63,7 +63,7 @@ exports.addBlogComment = async (req, res) => {
 exports.deleteBlogComment = async (req, res) => {
     try {
         const { commentId } = req.params;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!commentId) {
             return res.status(400).json({ error: 'Comment ID required' });
@@ -98,7 +98,7 @@ exports.updateBlogComment = async (req, res) => {
     try {
         const { commentId } = req.params;
         const { content } = req.body;
-        const userId = req.user?.id || req.headers['x-user-id'];
+        const userId = (req.user?._id || req.headers['x-user-id'])?.toString();
 
         if (!commentId) {
             return res.status(400).json({ error: 'Comment ID required' });

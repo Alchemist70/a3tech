@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import api from '../api';
+import { useAuth } from '../contexts/AuthContext';
+import { useAuthModal } from '../contexts/AuthModalContext';
 
 interface BookmarkButtonProps {
   itemId: string;
@@ -18,18 +21,21 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
 }) => {
   const [bookmarked, setBookmarked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const { openLogin } = useAuthModal();
 
   const checkBookmarkStatus = useCallback(async () => {
     try {
       const endpoints: Record<string, string> = {
-        project: `/api/projects/${itemId}/bookmark-status`,
-        knowledgeBase: `/api/knowledge-base/${itemId}/bookmark-status`,
-        blog: `/api/blog/${itemId}/bookmark-status`
+        project: `/projects/${itemId}/bookmark-status`,
+        knowledgeBase: `/knowledge-base/${itemId}/bookmark-status`,
+        blog: `/blog/${itemId}/bookmark-status`
       };
 
-      const response = await fetch(endpoints[itemType]);
-      const data = await response.json();
-      setBookmarked(data.bookmarked || false);
+      const res = await api.get(endpoints[itemType]);
+      const data = res.data || {};
+      const isBook = Boolean(data.bookmarked ?? data.isBookmarked ?? (data.success && data.isBookmarked));
+      setBookmarked(isBook);
     } catch (error) {
       console.error('Error checking bookmark status:', error);
     }
@@ -42,31 +48,25 @@ const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   const handleToggleBookmark = async () => {
     try {
       setLoading(true);
-
-      const endpoints: Record<string, string> = {
-        project: `/api/projects/${itemId}/bookmark`,
-        knowledgeBase: `/api/knowledge-base/${itemId}/bookmark`,
-        blog: `/api/blog/${itemId}/bookmark`
-      };
-
-      const response = await fetch(endpoints[itemType], {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': localStorage.getItem('userId') || '',
-          'x-user-name': localStorage.getItem('userName') || ''
+      try {
+        if (!isAuthenticated) {
+          try { openLogin && openLogin(); } catch (e) {}
+          return;
         }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to toggle bookmark');
-      }
+        const endpoints: Record<string, string> = {
+          project: `/projects/${itemId}/bookmark`,
+          knowledgeBase: `/knowledge-base/${itemId}/bookmark`,
+          blog: `/blog/${itemId}/bookmark`
+        };
 
-      const data = await response.json();
-      setBookmarked(data.bookmarked);
-
-      if (onToggle) {
-        onToggle(data.bookmarked);
+        const res = await api.post(endpoints[itemType], {});
+        const data = res.data || {};
+        const newState = Boolean(data.bookmarked ?? data.isBookmarked ?? (data.success && data.isBookmarked));
+        setBookmarked(newState);
+        if (onToggle) onToggle(newState);
+      } catch (err) {
+        console.error('Error toggling bookmark:', err);
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
