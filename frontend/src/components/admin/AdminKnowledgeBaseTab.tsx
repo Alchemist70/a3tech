@@ -47,13 +47,19 @@ const AdminKnowledgeBaseTab: React.FC = () => {
       try {
         const postRes = await api.post('/knowledge-base/subjects', { name: trimmed }, { withCredentials: true });
         const postData = postRes.data;
-        if (!postData || !postData.success) {
+
+        // Backend may return either a wrapped response { success: true, data: subject }
+        // or the created subject object directly. Accept both shapes.
+        const createdSubject = (postData && postData.success && postData.data) ? postData.data : (postData && (postData._id || postData.id) ? postData : null);
+        if (!createdSubject) {
           let errorMsg = 'Error adding subject.';
           errorMsg += '\n' + JSON.stringify(postData || {});
           alert(errorMsg);
           return;
         }
+
         setNewSubject('');
+        // Refresh subjects list to keep UI consistent with backend
         const res = await api.get('/knowledge-base/subjects', { withCredentials: true });
         const data = res.data;
         setSubjects(Array.isArray(data) ? data : (data.data || []));

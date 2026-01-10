@@ -70,7 +70,7 @@ const AdminTopicsTab: React.FC = () => {
     if (!newTopic) {
       setNewSlug('');
     }
-  }, [newTopic]);
+  }, [newTopic, newSlug]);
 
   const handleAdd = async () => {
     if (!newTopic.trim() || !newSubjectId || !newSlug.trim()) {
