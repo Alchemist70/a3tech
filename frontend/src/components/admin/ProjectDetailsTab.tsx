@@ -572,6 +572,38 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
     }
   };
 
+  // Upload helper for the Add New Project form (images/videos/diagrams arrays on a concept)
+  const handleConceptBlockFileUploadNew = async (file: File | null, levelKey: Level, conceptIdx: number, targetField: 'images' | 'videos' | 'diagrams') => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const fileUrl = res.data?.data?.fileUrl || res.data?.fileUrl;
+      if (fileUrl) {
+        setNewProject(prev => {
+          const concepts = Array.isArray(prev.educationalContent[levelKey].concepts) ? [...prev.educationalContent[levelKey].concepts] : [];
+          const fieldArr = Array.isArray(concepts[conceptIdx]?.[targetField]) ? [...(concepts[conceptIdx]?.[targetField] as any[])] : [];
+          fieldArr.push(fileUrl);
+          concepts[conceptIdx] = { ...concepts[conceptIdx], [targetField]: fieldArr };
+          return {
+            ...prev,
+            educationalContent: {
+              ...prev.educationalContent,
+              [levelKey]: {
+                ...prev.educationalContent[levelKey],
+                concepts
+              }
+            }
+          } as typeof prev;
+        });
+      }
+    } catch (err) {
+      console.error('Concept upload (new) failed', err);
+      alert('Failed to upload file');
+    }
+  };
+
   const handleSaveEdit = async () => {
     setMessage(null);
     setError(null);
@@ -1003,6 +1035,27 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                         });
                       }}
                     />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) handleConceptBlockFileUploadNew(file, level, i, 'images');
+                      }}
+                      style={{ display: 'none' }}
+                      id={`add-upload-${level}-${i}-images`}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById(`add-upload-${level}-${i}-images`)?.click()}
+                      sx={{ mt: 1 }}
+                    >
+                      Upload Image
+                    </Button>
+                    {Array.isArray(c.images) && c.images[0] ? (
+                      <img src={normalizeImageUrl(c.images[0]) || c.images[0]} alt="preview" style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
+                    ) : null}
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <TextField label="Videos (comma separated URLs)" value={Array.isArray(c.videos) ? c.videos.join(', ') : ''} fullWidth size="small" variant="outlined"
@@ -1024,6 +1077,27 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                         });
                       }}
                     />
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) handleConceptBlockFileUploadNew(file, level, i, 'videos');
+                      }}
+                      style={{ display: 'none' }}
+                      id={`add-upload-${level}-${i}-videos`}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById(`add-upload-${level}-${i}-videos`)?.click()}
+                      sx={{ mt: 1 }}
+                    >
+                      Upload Video
+                    </Button>
+                    {Array.isArray(c.videos) && c.videos[0] ? (
+                      <video src={c.videos[0]} controls style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
+                    ) : null}
                   </Grid>
                   <Grid item xs={12} md={4}>
                     <TextField label="Diagrams (comma separated URLs)" value={Array.isArray(c.diagrams) ? c.diagrams.join(', ') : ''} fullWidth size="small" variant="outlined"
@@ -1045,6 +1119,27 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                         });
                       }}
                     />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) handleConceptBlockFileUploadNew(file, level, i, 'diagrams');
+                      }}
+                      style={{ display: 'none' }}
+                      id={`add-upload-${level}-${i}-diagrams`}
+                    />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => document.getElementById(`add-upload-${level}-${i}-diagrams`)?.click()}
+                      sx={{ mt: 1 }}
+                    >
+                      Upload Diagram
+                    </Button>
+                    {Array.isArray(c.diagrams) && c.diagrams[0] ? (
+                      <img src={normalizeImageUrl(c.diagrams[0]) || c.diagrams[0]} alt="preview" style={{ maxWidth: 60, maxHeight: 40, borderRadius: 4, marginLeft: 8 }} />
+                    ) : null}
                   </Grid>
                 </Grid>
               </Paper>

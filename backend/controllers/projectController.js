@@ -304,7 +304,18 @@ const createProject = async (req, res) => {
                 dest.overview = src.overview || src.summary || '';
                 dest.prerequisites = Array.isArray(src.prerequisites) ? src.prerequisites : tryParse(src.prerequisites || src.prereqs || '') || [];
                 // concepts may be array or JSON string
-                dest.concepts = Array.isArray(src.concepts) ? src.concepts : tryParse(src.concepts || src.keyConcepts || '') || [];
+                const rawConcepts = Array.isArray(src.concepts) ? src.concepts : tryParse(src.concepts || src.keyConcepts || '') || [];
+                // Preserve description field from concepts (ConceptBlock array for uploaded/rich content)
+                dest.concepts = rawConcepts.map((c) => {
+                    if (!c || typeof c !== 'object') return { title: c || '', description: [], images: [], videos: [], diagrams: [] };
+                    return {
+                        title: c.title || '',
+                        description: Array.isArray(c.description) ? c.description : (c.description ? [c.description] : []),
+                        images: Array.isArray(c.images) ? c.images : (c.images ? [c.images] : []),
+                        videos: Array.isArray(c.videos) ? c.videos : (c.videos ? [c.videos] : []),
+                        diagrams: Array.isArray(c.diagrams) ? c.diagrams : (c.diagrams ? [c.diagrams] : [])
+                    };
+                });
                 // Normalize resources into array of { title, url, type }
                 let rawResources = Array.isArray(src.resources) ? src.resources : tryParse(src.resources || src.refs || '') || [];
                 const parseResourceLine = (line) => {
@@ -562,9 +573,20 @@ const updateProject = async (req, res) => {
             levels.forEach(lvl => {
                 const src = updateData.educationalContent[lvl] || {};
                 const concepts = Array.isArray(src.concepts) ? src.concepts : tryParse(src.concepts || src.keyConcepts || []) || [];
+                // Preserve description field from concepts (ConceptBlock array for uploaded/rich content)
+                const preservedConcepts = concepts.map((c) => {
+                    if (!c || typeof c !== 'object') return { title: c || '', description: [], images: [], videos: [], diagrams: [] };
+                    return {
+                        title: c.title || '',
+                        description: Array.isArray(c.description) ? c.description : (c.description ? [c.description] : []),
+                        images: Array.isArray(c.images) ? c.images : (c.images ? [c.images] : []),
+                        videos: Array.isArray(c.videos) ? c.videos : (c.videos ? [c.videos] : []),
+                        diagrams: Array.isArray(c.diagrams) ? c.diagrams : (c.diagrams ? [c.diagrams] : [])
+                    };
+                });
                 out[lvl] = {
                     summary: src.summary || src.overview || '',
-                    keyConcepts: Array.isArray(src.keyConcepts) ? src.keyConcepts : concepts.map((c) => (c && c.title) ? c.title : (typeof c === 'string' ? c : '')),
+                    keyConcepts: Array.isArray(src.keyConcepts) ? src.keyConcepts : preservedConcepts.map((c) => c.title),
                     realWorldApplications: Array.isArray(src.realWorldApplications) ? src.realWorldApplications : (Array.isArray(src.prerequisites) ? src.prerequisites : tryParse(src.prerequisites || '') || []),
                     methodology: src.methodology || src.overview || '',
                     technicalApproach: src.technicalApproach || '',
@@ -577,7 +599,7 @@ const updateProject = async (req, res) => {
                     // keep rich fields
                     overview: src.overview || '',
                     prerequisites: Array.isArray(src.prerequisites) ? src.prerequisites : tryParse(src.prerequisites || '') || [],
-                    concepts: concepts,
+                    concepts: preservedConcepts,
                     resources: (function(){
                         const rawResources = Array.isArray(src.resources) ? src.resources : tryParse(src.resources || '') || [];
                         const parseResourceLine = (line) => {
