@@ -43,14 +43,13 @@ api.interceptors.request.use((config) => {
   try {
     const fp = getOrCreateFingerprint();
     if (fp && config.headers) config.headers['x-fingerprint'] = fp;
-  // Use admin token for admin routes (admin UI, gold-members, and question bank), otherwise use public auth token
-  const urlPath = config.url || '';
-  const isAdminRoute = /^(\/admin|\/gold-members|\/question-bank)/.test(urlPath);
-    const token = typeof window !== 'undefined' 
-      ? (isAdminRoute 
-          ? localStorage.getItem('admin_auth_token')
-          : localStorage.getItem('auth_token'))
-      : null;
+    
+    // Determine which auth token to use
+    // If admin_auth_token exists, the user is an admin - use it for ALL requests
+    // Otherwise use the regular auth_token for public/user routes
+    const adminToken = typeof window !== 'undefined' ? localStorage.getItem('admin_auth_token') : null;
+    const publicToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = adminToken || publicToken;
     
     // Attach auth headers when present
     if (token && config.headers) {
@@ -61,8 +60,9 @@ api.interceptors.request.use((config) => {
     // Helpful debug logging in development to trace token/header issues
     if (process.env.NODE_ENV !== 'production') {
       const tokenSummary = token ? `${token.slice(0,6)}...${token.slice(-6)}` : 'none';
+      const tokenType = adminToken ? 'admin' : publicToken ? 'public' : 'none';
       // eslint-disable-next-line no-console
-      console.debug('[api] request ->', config.method?.toUpperCase(), config.url, { isAdminRoute, token: tokenSummary, fingerprint: fp });
+      console.debug('[api] request ->', config.method?.toUpperCase(), config.url, { tokenType, token: tokenSummary, fingerprint: fp });
     }
   } catch (e) {
     // ignore header attach errors
