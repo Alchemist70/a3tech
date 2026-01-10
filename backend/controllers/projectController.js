@@ -487,6 +487,23 @@ const createProject = async (req, res) => {
         console.log('[createProject] Project instance created, attempting save...');
         await project.save();
         console.log('[createProject] Project saved successfully with id:', project._id);
+        // Log what was actually saved to DB
+        if (project?.educationalContent) {
+            const ec = project.educationalContent;
+            ['beginner', 'intermediate', 'advanced'].forEach(level => {
+                const lvl = ec[level];
+                if (lvl?.concepts) {
+                    console.log(`[createProject] ${level} concepts SAVED IN DB:`, lvl.concepts.map((c, i) => ({
+                        index: i,
+                        title: c?.title,
+                        hasDescription: !!c?.description,
+                        descIsArray: Array.isArray(c?.description),
+                        descLength: Array.isArray(c?.description) ? c.description.length : 'N/A',
+                        descContent: c?.description ? JSON.stringify(c.description).substring(0, 200) : 'none'
+                    })));
+                }
+            });
+        }
         res.status(201).json({
             success: true,
             data: project,
@@ -538,6 +555,23 @@ const updateProject = async (req, res) => {
     try {
         const { id } = req.params;
         let updateData = req.body;
+        console.log('[updateProject] REQUEST BODY RECEIVED:', JSON.stringify(updateData, null, 2).substring(0, 3000));
+        if (updateData?.educationalContent) {
+            const ec = updateData.educationalContent;
+            ['beginner', 'intermediate', 'advanced'].forEach(level => {
+                const lvl = ec[level];
+                if (lvl?.concepts) {
+                    console.log(`[updateProject] ${level} concepts in request:`, lvl.concepts.map((c, i) => ({
+                        index: i,
+                        title: c?.title,
+                        hasDescription: !!c?.description,
+                        descIsArray: Array.isArray(c?.description),
+                        descLength: Array.isArray(c?.description) ? c.description.length : 'N/A',
+                        descContent: c?.description ? JSON.stringify(c.description).substring(0, 200) : 'none'
+                    })));
+                }
+            });
+        }
         // Sanitize educationalContent same as create
         if (updateData && updateData.educationalContent && typeof updateData.educationalContent === 'object') {
             // reuse sanitize from above by inlining similar logic
@@ -698,6 +732,23 @@ const updateProject = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'Project not found'
+            });
+        }
+        // Log what was actually saved to DB
+        if (project?.educationalContent) {
+            const ec = project.educationalContent;
+            ['beginner', 'intermediate', 'advanced'].forEach(level => {
+                const lvl = ec[level];
+                if (lvl?.concepts) {
+                    console.log(`[updateProject] ${level} concepts SAVED IN DB:`, lvl.concepts.map((c, i) => ({
+                        index: i,
+                        title: c?.title,
+                        hasDescription: !!c?.description,
+                        descIsArray: Array.isArray(c?.description),
+                        descLength: Array.isArray(c?.description) ? c.description.length : 'N/A',
+                        descContent: c?.description ? JSON.stringify(c.description).substring(0, 200) : 'none'
+                    })));
+                }
             });
         }
         res.json({
