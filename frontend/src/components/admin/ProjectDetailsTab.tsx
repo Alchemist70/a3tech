@@ -785,8 +785,8 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
 
     return (
       <>
-        {/* Fixed Markdown Help and Toolbar at the very top, just under the header */}
-        <Box sx={{ position: 'sticky', top: 0, zIndex: 1200, background: '#f8f9fa', pb: 2, pt: 2, mb: 2, borderBottom: '1px solid #eee' }}>
+        {/* Markdown Help and Toolbar - positioned exactly like TopicDetailsTab */}
+        <Box sx={{ position: 'fixed', left: 0, right: 0, top: 'calc(var(--appbar-height, 64px) + var(--admin-header-height, 48px) + var(--admin-tabs-height, 48px))', zIndex: 1200, background: 'background.default', pb: 2, pt: 2, mb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Accordion defaultExpanded sx={{ maxWidth: 1200, margin: '0 auto', mb: 1 }}>
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
