@@ -4,6 +4,8 @@ import api from '../api';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { useAdminTabAuth } from '../contexts/AdminTabAuthContext';
+import TabPasswordModal from '../components/TabPasswordModal';
 
 import type { Project } from '../types/Project';
 
@@ -45,6 +47,21 @@ const tabLabels = [
   'WAEC Question Bank',
   'Users',
 ];
+
+// Protected tab labels (used to determine protection by name so index changes won't break behavior)
+const PROTECTED_TAB_LABELS = new Set([
+  'Projects',
+  'Blogs',
+  'About',
+  'Contact',
+  'Research Areas',
+  'Project Details',
+  'Blog Details',
+  'Knowledge Base',
+  'Topics',
+  'Topic Details',
+  'Users',
+]);
 
 function TabPanel(props: any) {
   const { children, value, index, ...other } = props;
@@ -487,6 +504,41 @@ const Admin: React.FC = () => {
   const [aboutEditBuffer, setAboutEditBuffer] = useState<any>(initialAbout);
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [pendingTabIndex, setPendingTabIndex] = useState<number | null>(null);
+  const [attemptedTabName, setAttemptedTabName] = useState<string>('');
+  const { isTabVerified, requiresPassword } = useAdminTabAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // On initial mount: handle fresh admin login or password protection
+  useEffect(() => {
+    try {
+      // Check if this is a fresh login via navigation state (more reliable than sessionStorage)
+      const navState: any = location.state;
+      const fresh = navState?.freshLogin;
+
+      if (fresh) {
+        // Fresh login: switch to first non-protected tab without showing modal
+        const firstNonProtected = tabLabels.findIndex((label) => !PROTECTED_TAB_LABELS.has(label));
+        if (firstNonProtected >= 0) {
+          setTab(firstNonProtected);
+        }
+        return; // Don't show password modal on fresh login
+      }
+
+      // Not a fresh login: check if current tab is protected
+      const currentLabel = tabLabels[tab];
+      if (PROTECTED_TAB_LABELS.has(currentLabel) && !isTabVerified(tab)) {
+        setPendingTabIndex(tab);
+        setAttemptedTabName(tabLabels[tab] || `Tab ${tab}`);
+        setPasswordModalOpen(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const handleProfilePicFile = async (file: File | null) => {
     if (!file) return;
@@ -522,6 +574,24 @@ const Admin: React.FC = () => {
 
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    // If modal is open and the user clicks a non-protected tab, close modal and switch.
+    const label = tabLabels[newValue];
+    if (passwordModalOpen && !PROTECTED_TAB_LABELS.has(label)) {
+      setPasswordModalOpen(false);
+      setPendingTabIndex(null);
+      setAttemptedTabName('');
+      setTab(newValue);
+      return;
+    }
+
+    // Check if tab requires password (use label-based check to avoid index misalignment)
+    if (PROTECTED_TAB_LABELS.has(label) && !isTabVerified(newValue)) {
+      setPendingTabIndex(newValue);
+      setAttemptedTabName(tabLabels[newValue] || `Tab ${newValue}`);
+      setPasswordModalOpen(true);
+      return; // Don't change tab yet
+    }
+
     setTab(newValue);
   };
 
@@ -1158,9 +1228,6 @@ const Admin: React.FC = () => {
     setProjectDeleteDialogOpen(false);
     setProjectDeleteTarget(null);
   };
-
-  const navigate = useNavigate();
-  const location = useLocation();
 
   // Admin user state (read from admin_user localStorage)
   const [adminUserState, setAdminUserState] = useState<{ name?: string; email?: string } | null>(null);
@@ -2505,6 +2572,21 @@ const Admin: React.FC = () => {
       <TabPanel value={tab} index={19}>
         <AdminUsersTab />
       </TabPanel>
+      <TabPasswordModal
+        open={passwordModalOpen}
+        onClose={() => {
+          setPasswordModalOpen(false);
+          setPendingTabIndex(null);
+        }}
+        onSuccess={() => {
+          if (pendingTabIndex !== null) {
+            setTab(pendingTabIndex);
+            setPendingTabIndex(null);
+          }
+        }}
+        tabName={attemptedTabName}
+        tabIndex={pendingTabIndex ?? 0}
+      />
     </Paper>
   );
 }

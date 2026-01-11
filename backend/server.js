@@ -347,6 +347,7 @@ app.use('/api/privacy', require('./routes/privacy'));
 app.use('/api/code', require('./routes/codeExecution'));
 // Admin endpoints (gold members management)
 app.use('/api/admin', admin_1.default);
+app.use('/api/admin-tab-auth', require('./routes/adminTabAuth'));
 app.use('/api/gold-members', require('./routes/goldMembers'));
 app.use('/api/gold-member-status', goldMemberStatus_1.default);
 // Mock test endpoints

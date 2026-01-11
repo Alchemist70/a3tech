@@ -246,6 +246,7 @@ try {
   app.use('/api/auth', auth);
   app.use('/api/visits', visits);
   app.use('/api/admin', admin);
+  app.use('/api/admin-tab-auth', require('../routes/adminTabAuth'));
   app.use('/api/gold-member-status', goldMemberStatus);
   app.use('/api/chat-history', chatHistory);
 } catch (routeErr) {

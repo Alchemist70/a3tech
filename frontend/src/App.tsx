@@ -22,6 +22,7 @@ import Contact from './pages/Contact';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import Admin from './pages/Admin';
+import { AdminTabAuthProvider } from './contexts/AdminTabAuthContext';
 import BlogDetail from './pages/BlogDetail';
 import Bookmarks from './pages/Bookmarks';
 import AdminBlogDetail from './pages/admin/AdminBlogDetail';
@@ -164,12 +165,16 @@ function AppContent() {
                 <Route path="/admin/signup" element={<AdminSignup />} />
                 <Route path="/admin" element={
                   <ProtectedRoute requireAdmin={true}>
-                    <Admin />
+                    <AdminTabAuthProvider>
+                      <Admin />
+                    </AdminTabAuthProvider>
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/blogs/:title" element={
                   <ProtectedRoute requireAdmin={true}>
-                    <AdminBlogDetail />
+                    <AdminTabAuthProvider>
+                      <AdminBlogDetail />
+                    </AdminTabAuthProvider>
                   </ProtectedRoute>
                 } />
                 <Route path="/knowledge-base/:subjectSlug" element={

@@ -195,6 +195,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
         localStorage.removeItem('admin_auth_token');
         localStorage.removeItem('admin_user');
+        // Clear any per-tab admin unlock tokens stored in sessionStorage so next login requires password again
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith('admin_tab_pw_')) keysToRemove.push(k);
+          }
+          keysToRemove.forEach(k => sessionStorage.removeItem(k));
+        } catch (e) {
+          // ignore
+        }
       } catch (e) {
         // ignore any errors during cleanup
       }

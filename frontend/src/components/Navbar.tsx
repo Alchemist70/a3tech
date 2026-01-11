@@ -49,6 +49,17 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
       localStorage.removeItem('admin_user');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
+      // Clear per-tab admin unlocks
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith('admin_tab_pw_')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+      } catch (e) {
+        // ignore
+      }
     } catch (e) {
       // ignore any errors during cleanup
     }
@@ -64,6 +75,17 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
       localStorage.removeItem('user');
       localStorage.removeItem('admin_auth_token');
       localStorage.removeItem('admin_user');
+      // Clear per-tab admin unlocks
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith('admin_tab_pw_')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+      } catch (e) {
+        // ignore
+      }
     } catch (e) {
       // ignore any errors during cleanup
     }

@@ -58,10 +58,22 @@ const AdminLogin: React.FC = () => {
       localStorage.setItem('admin_auth_token', token);
       localStorage.setItem('admin_user', JSON.stringify(user));
 
-      // Navigate to admin dashboard with success message
+      // Ensure any previous per-tab session unlocks are cleared for a fresh admin session
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith('admin_tab_pw_')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+      } catch (e) {
+        // ignore
+      }
+
+      // Navigate to admin dashboard with success message and fresh login flag
       navigate(from, {
         replace: true,
-        state: { success: `Welcome, ${user.name || 'Admin'}` }
+        state: { success: `Welcome, ${user.name || 'Admin'}`, freshLogin: true }
       });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Login failed');
