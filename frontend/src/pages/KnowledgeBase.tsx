@@ -1,86 +1,68 @@
-import React, { useState } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, Collapse, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, List, ListItem, ListItemText, Collapse, Paper, CircularProgress } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useNavigate } from 'react-router-dom';
+import api from '../api';
 
-const subjects = [
-  {
-    category: 'Biology For Engineers',
-    topics: [
-      'Cell Structure',
-      'Genetics',
-      'Microbiology',
-      'Biological Systems',
-    ],
-  },
-  {
-    category: 'Biochemistry For Engineers',
-    topics: [
-      'Enzymes',
-      'Metabolism',
-      'Proteins',
-      'Nucleic Acids',
-    ],
-  },
-  {
-    category: 'Physiology For Engineers',
-    topics: [
-      'Human Physiology',
-      'Neurophysiology',
-      'Cardiovascular System',
-      'Respiratory System',
-    ],
-  },
-  {
-    category: 'Chemistry For Engineers',
-    topics: [
-      'Organic Chemistry',
-      'Inorganic Chemistry',
-      'Physical Chemistry',
-      'Analytical Chemistry',
-    ],
-  },
-  {
-    category: 'Physics For Engineers',
-    topics: [
-      'Mechanics',
-      'Thermodynamics',
-      'Electromagnetism',
-      'Quantum Physics',
-    ],
-  },
-  {
-    category: 'Mathematics For Engineers',
-    topics: [
-      'Calculus',
-      'Linear Algebra',
-      'Probability & Statistics',
-      'Differential Equations',
-    ],
-  },
-  {
-    category: 'Computer Science For Engineers',
-    topics: [
-      'Programming Basics',
-      'Data Structures',
-      'Algorithms',
-      'Databases',
-    ],
-  },
-];
+interface Subject {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
+interface Topic {
+  _id: string;
+  name: string;
+  slug: string;
+  subjectId: string;
+}
+
+interface ExpandedSubject extends Subject {
+  topics: Topic[];
+}
 
 const KnowledgeBase: React.FC = () => {
+  const [subjects, setSubjects] = useState<ExpandedSubject[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch subjects
+        const subjectsRes = await api.get('/knowledge-base/subjects', { withCredentials: true });
+        const subjectsData: Subject[] = Array.isArray(subjectsRes?.data) ? subjectsRes.data : [];
+
+        // Fetch all topics
+        const topicsRes = await api.get('/topics', { withCredentials: true });
+        const topicsData: Topic[] = Array.isArray(topicsRes?.data) ? topicsRes.data : [];
+
+        // Map topics to their subjects
+        const subjectsWithTopics: ExpandedSubject[] = subjectsData.map(subject => ({
+          ...subject,
+          topics: topicsData.filter(topic => topic.subjectId === subject._id),
+        }));
+
+        setSubjects(subjectsWithTopics);
+      } catch (err) {
+        console.error('Failed to fetch subjects or topics:', err);
+        setSubjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleClick = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const handleTopicClick = (categoryName: string, topic: string) => {
-    const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
-    const topicSlug = topic.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/knowledge-base/${categorySlug}/${topicSlug}`);
+  const handleTopicClick = (subject: Subject, topic: Topic) => {
+    navigate(`/knowledge-base/${subject.slug}/${topic.slug}`);
   };
 
   return (
@@ -91,42 +73,61 @@ const KnowledgeBase: React.FC = () => {
       <Typography variant="body1" gutterBottom>
         Not familiar with Research or Project concepts? Explore the foundational subjects below to get started!
       </Typography>
-      <Paper elevation={2} sx={{ mt: 3 }}>
-        <List>
-          {subjects.map((subject, idx) => (
-            <React.Fragment key={subject.category}>
-              <ListItem button onClick={() => handleClick(idx)}>
-                <ListItemText primary={subject.category} />
-                <ExpandMoreIcon
-                  style={{
-                    transform: openIndex === idx ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: '0.2s',
-                  }}
-                />
-              </ListItem>
-              <Collapse in={openIndex === idx} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {subject.topics.map((topic) => (
-                    <ListItem 
-                      key={topic} 
-                      button
-                      onClick={() => handleTopicClick(subject.category, topic)}
-                      sx={{ 
-                        pl: 4,
-                        '&:hover': {
-                          backgroundColor: 'action.hover',
-                        },
-                      }}
-                    >
-                      <ListItemText primary={topic} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Collapse>
-            </React.Fragment>
-          ))}
-        </List>
-      </Paper>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : subjects.length === 0 ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+          No subjects available.
+        </Typography>
+      ) : (
+        <Paper elevation={2} sx={{ mt: 3 }}>
+          <List>
+            {subjects.map((subject, idx) => (
+              <React.Fragment key={subject._id}>
+                <ListItem button onClick={() => handleClick(idx)}>
+                  <ListItemText primary={subject.name} />
+                  <ExpandMoreIcon
+                    style={{
+                      transform: openIndex === idx ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: '0.2s',
+                    }}
+                  />
+                </ListItem>
+                <Collapse in={openIndex === idx} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {subject.topics.length === 0 ? (
+                      <ListItem sx={{ pl: 4 }}>
+                        <ListItemText 
+                          primary="No topics available" 
+                          primaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}
+                        />
+                      </ListItem>
+                    ) : (
+                      subject.topics.map((topic) => (
+                        <ListItem
+                          key={topic._id}
+                          button
+                          onClick={() => handleTopicClick(subject, topic)}
+                          sx={{
+                            pl: 4,
+                            '&:hover': {
+                              backgroundColor: 'action.hover',
+                            },
+                          }}
+                        >
+                          <ListItemText primary={topic.name} />
+                        </ListItem>
+                      ))
+                    )}
+                  </List>
+                </Collapse>
+              </React.Fragment>
+            ))}
+          </List>
+        </Paper>
+      )}
     </Box>
   );
 };
