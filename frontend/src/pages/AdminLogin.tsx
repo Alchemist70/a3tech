@@ -5,10 +5,13 @@ import api from '../api';
 import AdminLayout from '../components/AdminLayout';
 
 const AdminLogin: React.FC = () => {
-  // Clear any existing auth on mount
+  // CRITICAL: Clear all existing auth (both admin and public user) on mount
+  // This prevents users from reusing old sessions when switching to admin login
   useEffect(() => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
+    localStorage.removeItem('admin_auth_token');
+    localStorage.removeItem('admin_user');
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +43,15 @@ const AdminLogin: React.FC = () => {
       const { token, data: user } = res.data;
       if (!token || !user) {
         throw new Error('Invalid login response');
+      }
+
+      // CRITICAL: Clear all public user auth before storing admin session
+      // This prevents a previous non-admin login from interfering
+      try {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+      } catch (e) {
+        // ignore any errors during cleanup
       }
 
       // Store admin session separately from public site auth

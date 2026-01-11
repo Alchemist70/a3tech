@@ -43,14 +43,30 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   
   const handleAdminLogout = () => {
     handleMenuClose();
-    localStorage.removeItem('admin_auth_token');
-    localStorage.removeItem('admin_user');
+    // CRITICAL: Clear all auth (admin AND public user) to prevent sessions from interfering
+    try {
+      localStorage.removeItem('admin_auth_token');
+      localStorage.removeItem('admin_user');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+    } catch (e) {
+      // ignore any errors during cleanup
+    }
     setAdminUser(null);
     navigate('/admin/login');
   };
 
   const handleUserLogout = () => {
     handleMenuClose();
+    // CRITICAL: Clear all auth (user AND admin) to prevent sessions from interfering
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('admin_auth_token');
+      localStorage.removeItem('admin_user');
+    } catch (e) {
+      // ignore any errors during cleanup
+    }
     logout();
     openLogin();
   };

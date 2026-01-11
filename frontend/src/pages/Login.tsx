@@ -14,6 +14,15 @@ const Login: React.FC = () => {
   const { login } = useAuth();
 
   useEffect(() => {
+    // CRITICAL: Clear all admin auth when entering the user login page
+    // This prevents admin sessions from interfering with non-admin login
+    try {
+      localStorage.removeItem('admin_auth_token');
+      localStorage.removeItem('admin_user');
+    } catch (e) {
+      // ignore any errors during cleanup
+    }
+
     // Check for success message from location state (e.g., from password reset)
     if (location.state?.message) {
       setSuccessMessage(location.state.message);

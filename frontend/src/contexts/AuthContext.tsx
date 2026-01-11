@@ -141,6 +141,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string, secretCode?: string): Promise<User> => {
+    // CRITICAL: Clear all old authentication data before starting new login
+    // This prevents admin tokens/users from being reused when a different user (or same email) logs in
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('admin_auth_token');
+      localStorage.removeItem('admin_user');
+    } catch (e) {
+      // ignore any errors during cleanup
+    }
+    setToken(null);
+    setUser(null);
+
     const res = await api.post('/auth/login', { email, password, secretCode });
     const newToken = res.data?.token;
     let userData = res.data?.data;
@@ -176,8 +189,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (e) {
       // ignore logout errors
     } finally {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
+      // CRITICAL: Clear all auth data (user, admin, and any old session state)
+      try {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('admin_auth_token');
+        localStorage.removeItem('admin_user');
+      } catch (e) {
+        // ignore any errors during cleanup
+      }
       setToken(null);
       setUser(null);
     }

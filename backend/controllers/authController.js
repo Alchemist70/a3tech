@@ -238,7 +238,16 @@ exports.me = async (req, res) => {
   try {
     const token = req.headers['x-auth-token'] || (req.headers.authorization && String(req.headers.authorization).split(' ')[1]);
     if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
-    const user = await User.findOne({ token }).select('-password');
+
+    // Verify JWT and fetch user by id encoded in token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+
+    const user = await User.findById(decoded.id).select('-password -secretCode');
     if (!user) return res.status(401).json({ success: false, message: 'Invalid token' });
     res.json({ success: true, data: user });
   } catch (err) {
@@ -274,11 +283,52 @@ exports.meAdmin = async (req, res) => {
 exports.logout = async (req, res) => {
   try {
     const token = req.headers['x-auth-token'] || (req.headers.authorization && String(req.headers.authorization).split(' ')[1]);
-    if (!token) return res.json({ success: true });
-    const user = await User.findOne({ token });
-    if (!user) return res.json({ success: true });
-    user.token = undefined;
-    await user.save();
+
+    // If no token provided, still succeed (idempotent logout)
+    if (!token) {
+      // If using express-session-based login, destroy session
+      if (req.logout) {
+        try { req.logout(); } catch (e) {}
+      }
+      if (req.session) {
+        try { req.session.destroy(() => {}); } catch (e) {}
+      }
+      return res.json({ success: true });
+    }
+
+    // Try to verify token to identify user and optionally perform server-side invalidation
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      // token invalid/expired - still treat as logged out
+      if (req.logout) {
+        try { req.logout(); } catch (err) {}
+      }
+      if (req.session) {
+        try { req.session.destroy(() => {}); } catch (err) {}
+      }
+      return res.json({ success: true });
+    }
+
+    // Optionally clear any stored server-side token on the user record if present
+    try {
+      const user = await User.findById(decoded.id).select('+secretCode');
+      if (user && user.token) {
+        user.token = undefined;
+        await user.save();
+      }
+    } catch (e) {
+      // ignore errors here
+    }
+
+    if (req.logout) {
+      try { req.logout(); } catch (err) {}
+    }
+    if (req.session) {
+      try { req.session.destroy(() => {}); } catch (err) {}
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Logout failed', error: err.message || err });

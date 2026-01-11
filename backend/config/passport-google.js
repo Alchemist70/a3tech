@@ -73,12 +73,28 @@ passport.use(
   )
 );
 
-passport.serializeUser((obj, done) => {
-  done(null, obj);
+// Serialize only the user id into the session to avoid storing entire objects
+passport.serializeUser((payload, done) => {
+  try {
+    // payload may be either a user document or an object like { user, token }
+    if (!payload) return done(null, null);
+    if (payload.user && payload.user._id) return done(null, String(payload.user._id));
+    if (payload._id) return done(null, String(payload._id));
+    // last resort: store payload directly
+    return done(null, payload);
+  } catch (e) {
+    return done(e);
+  }
 });
 
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
+passport.deserializeUser(async (id, done) => {
+  try {
+    if (!id) return done(null, null);
+    const user = await User.findById(id).select('-password -secretCode');
+    return done(null, user);
+  } catch (e) {
+    return done(e);
+  }
 });
 
 module.exports = passport;

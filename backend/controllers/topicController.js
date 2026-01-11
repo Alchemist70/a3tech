@@ -73,7 +73,18 @@ exports.getTopicBySlug = async (req, res) => {
     // gating: anonymous allowed only 2 topic views, logged-in non-subscribed/gold see only first content
     const token = req.headers['x-auth-token'] || (req.headers.authorization && String(req.headers.authorization).split(' ')[1]);
     let user = null;
-    if (token) user = await User.findOne({ token });
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const cfg = require('../config/config');
+        const decoded = jwt.verify(token, cfg.JWT_SECRET);
+        if (decoded && decoded.id) {
+          user = await User.findById(decoded.id).select('-password -secretCode');
+        }
+      } catch (e) {
+        // ignore invalid token
+      }
+    }
 
     if (!user) {
       const ip = req.ip || req.connection && req.connection.remoteAddress || '';
