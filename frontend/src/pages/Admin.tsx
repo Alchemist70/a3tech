@@ -507,7 +507,7 @@ const Admin: React.FC = () => {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [pendingTabIndex, setPendingTabIndex] = useState<number | null>(null);
   const [attemptedTabName, setAttemptedTabName] = useState<string>('');
-  const { isTabVerified, requiresPassword } = useAdminTabAuth();
+  const { isTabVerified } = useAdminTabAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
