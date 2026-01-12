@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, List, ListItem, ListItemText, Collapse, Paper, CircularProgress } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Box, Typography, Card, CardContent, Grid, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -23,7 +22,6 @@ interface ExpandedSubject extends Subject {
 
 const KnowledgeBase: React.FC = () => {
   const [subjects, setSubjects] = useState<ExpandedSubject[]>([]);
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -57,24 +55,21 @@ const KnowledgeBase: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleClick = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
-  const handleTopicClick = (subject: Subject, topic: Topic) => {
-    navigate(`/knowledge-base/${subject.slug}/${topic.slug}`);
+  const handleSubjectClick = (subject: Subject) => {
+    navigate(`/knowledge-base/${subject.slug}`);
   };
 
   return (
-    <Box sx={{ maxWidth: 800, margin: 'auto', p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ maxWidth: 1200, margin: 'auto', p: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 800 }}>
         Knowledge Base
       </Typography>
-      <Typography variant="body1" gutterBottom>
+      <Typography variant="body1" gutterBottom sx={{ mb: 4, color: 'text.secondary' }}>
         Not familiar with Research or Project concepts? Explore the foundational subjects below to get started!
       </Typography>
+
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
           <CircularProgress />
         </Box>
       ) : subjects.length === 0 ? (
@@ -82,51 +77,41 @@ const KnowledgeBase: React.FC = () => {
           No subjects available.
         </Typography>
       ) : (
-        <Paper elevation={2} sx={{ mt: 3 }}>
-          <List>
-            {subjects.map((subject, idx) => (
-              <React.Fragment key={subject._id}>
-                <ListItem button onClick={() => handleClick(idx)}>
-                  <ListItemText primary={subject.name} />
-                  <ExpandMoreIcon
-                    style={{
-                      transform: openIndex === idx ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: '0.2s',
-                    }}
-                  />
-                </ListItem>
-                <Collapse in={openIndex === idx} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {subject.topics.length === 0 ? (
-                      <ListItem sx={{ pl: 4 }}>
-                        <ListItemText 
-                          primary="No topics available" 
-                          primaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}
-                        />
-                      </ListItem>
-                    ) : (
-                      subject.topics.map((topic) => (
-                        <ListItem
-                          key={topic._id}
-                          button
-                          onClick={() => handleTopicClick(subject, topic)}
-                          sx={{
-                            pl: 4,
-                            '&:hover': {
-                              backgroundColor: 'action.hover',
-                            },
-                          }}
-                        >
-                          <ListItemText primary={topic.name} />
-                        </ListItem>
-                      ))
-                    )}
-                  </List>
-                </Collapse>
-              </React.Fragment>
-            ))}
-          </List>
-        </Paper>
+        <Grid container spacing={3}>
+          {subjects.map((subject) => (
+            <Grid item xs={12} sm={6} md={4} key={subject._id}>
+              <Card
+                sx={(theme) => ({
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                    borderColor: theme.palette.primary.main,
+                  }
+                })}
+                onClick={() => handleSubjectClick(subject)}
+              >
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }} color="primary.main" gutterBottom>
+                    {subject.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {subject.topics.length} {subject.topics.length === 1 ? 'topic' : 'topics'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Tap to explore
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       )}
     </Box>
   );
