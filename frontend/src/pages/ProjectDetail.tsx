@@ -19,6 +19,7 @@ import {
   useTheme,
   Card,
   CardContent,
+  Theme,
 } from '@mui/material';
 import {
   GitHub,
@@ -41,8 +42,34 @@ import type { ConceptBlock } from '../types/Project';
 import EnhancedMarkdown from '../components/EnhancedMarkdown';
 import CodeExecutor from '../components/CodeEditor/CodeExecutor';
 import BookmarkButton from '../components/BookmarkButton';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title as ChartTitle,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Bar, Line, Pie } from 'react-chartjs-2';
 
 /* eslint-enable @typescript-eslint/no-unused-vars */
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ChartTitle,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 const AnimatedBox = motion(Box);
 
@@ -118,7 +145,7 @@ const Quiz = ({ questions }: { questions: QuizQuestion[] }) => {
 };
 
 // Render ConceptBlock[] as inline content
-function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme: { palette: { mode: 'light' | 'dark' } }) {
+function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme: Theme) {
   if (!blocks) return null;
   let arr: ConceptBlock[] = [];
   if (typeof blocks === 'string') {
@@ -196,6 +223,122 @@ function renderConceptBlocks(blocks: ConceptBlock[] | string | undefined, theme:
       }
       // Default: direct video file
       return <Box key={idx} sx={{ my: 2, textAlign: 'center' }}><video src={block.url} controls style={{ maxWidth: '100%', maxHeight: 320, borderRadius: 8, boxShadow: '0 2px 8px #0002', background: '#000' }} /></Box>;
+    }
+    if (block.type === 'table') {
+      return (
+        <Box key={idx} sx={{ my: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: theme.palette.background.paper }}>
+          {block.title && (
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              {block.title}
+            </Typography>
+          )}
+          {block.description && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {block.description}
+            </Typography>
+          )}
+          <Box sx={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${theme.palette.divider}` }}>
+              {block.headers && block.headers.length > 0 && (
+                <thead>
+                  <tr style={{ backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#f5f5f5' }}>
+                    {block.headers.map((header, hIdx) => (
+                      <th key={hIdx} style={{ padding: '12px', textAlign: 'left', border: `1px solid ${theme.palette.divider}`, fontWeight: 'bold', color: theme.palette.text.primary }}>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                {block.rows && block.rows.length > 0 ? block.rows.map((row, rIdx) => (
+                  <tr key={rIdx} style={{ backgroundColor: rIdx % 2 === 0 ? theme.palette.background.paper : theme.palette.action.hover }}>
+                    {Array.isArray(row) ? row.map((cell, cIdx) => (
+                      <td key={cIdx} style={{ padding: '12px', border: `1px solid ${theme.palette.divider}`, color: theme.palette.text.primary }}>
+                        {cell || ''}
+                      </td>
+                    )) : (
+                      <td style={{ padding: '12px', border: `1px solid ${theme.palette.divider}`, color: theme.palette.text.primary }}>
+                        {String(row)}
+                      </td>
+                    )}
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={block.headers?.length || 1} style={{ padding: '12px', border: `1px solid ${theme.palette.divider}`, textAlign: 'center', color: theme.palette.text.secondary }}>
+                      No data rows entered
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </Box>
+        </Box>
+      );
+    }
+    if (block.type === 'chart') {
+      const chartData = {
+        labels: block.labels || [],
+        datasets: (block.datasets || []).map((dataset) => ({
+          label: dataset.label,
+          data: dataset.data,
+          backgroundColor: dataset.backgroundColor || '#FF6384',
+          borderColor: dataset.borderColor || '#FF6384',
+          borderWidth: 1,
+        })),
+      };
+
+      const chartOptions = {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top' as const,
+          },
+          title: {
+            display: !!block.title,
+            text: block.title,
+          },
+        },
+      };
+
+      let ChartComponent;
+      switch (block.chartType) {
+        case 'bar':
+          ChartComponent = Bar;
+          break;
+        case 'line':
+          ChartComponent = Line;
+          break;
+        case 'pie':
+          ChartComponent = Pie;
+          break;
+        default:
+          ChartComponent = Bar;
+      }
+
+      return (
+        <Box key={idx} sx={{ my: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: '#fafafa' }}>
+          {block.title && (
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, textAlign: 'center' }}>
+              {block.title}
+            </Typography>
+          )}
+          {block.description && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
+              {block.description}
+            </Typography>
+          )}
+          <Box sx={{ height: 400, display: 'flex', justifyContent: 'center' }}>
+            {block.labels && block.labels.length > 0 && block.datasets && block.datasets.length > 0 && block.datasets.some(ds => ds.data && ds.data.length > 0) ? (
+              <ChartComponent data={chartData} options={chartOptions} />
+            ) : (
+              <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                No chart data entered
+              </Box>
+            )}
+          </Box>
+        </Box>
+      );
     }
     return null;
   });

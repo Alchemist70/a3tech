@@ -521,8 +521,184 @@ const AdminTopicDetailsTab: React.FC = () => {
                 quizzes[idx] = { ...quizzes[idx], explanations };
                 return { ...d, quizzes };
               })}>Add Explanation</Button>
-            </Box>
-            <Button color="error" variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
+            </Box>            <Divider sx={{ my: 2 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Tables</Typography>
+            <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setNewDetail((d: typeof emptyDetail) => {
+              const quizzes = [...(d.quizzes || [])];
+              quizzes[idx] = { ...quizzes[idx], tables: [...(quizzes[idx].tables || []), { title: '', description: '', headers: [], rows: [] }] };
+              return { ...d, quizzes };
+            })}>Add Table</Button>
+            {Array.isArray(quiz.tables) && quiz.tables.map((table: any, tidx: number) => (
+              <Box key={tidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: 'background.paper' }}>
+                <TextField label="Table Title" value={table.title || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const tables = [...(quizzes[idx].tables || [])];
+                  tables[tidx] = { ...tables[tidx], title: e.target.value };
+                  quizzes[idx] = { ...quizzes[idx], tables };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                <TextField label="Description" value={table.description || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const tables = [...(quizzes[idx].tables || [])];
+                  tables[tidx] = { ...tables[tidx], description: e.target.value };
+                  quizzes[idx] = { ...quizzes[idx], tables };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} onFocus={handleFocus} />
+                <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Headers (comma-separated)</Typography>
+                <TextField value={table.headers ? table.headers.join(', ') : ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const tables = [...(quizzes[idx].tables || [])];
+                  tables[tidx] = { ...tables[tidx], headers: e.target.value.split(',').map(h => h.trim()) };
+                  quizzes[idx] = { ...quizzes[idx], tables };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Rows (one per line, values comma-separated)</Typography>
+                <TextField
+                  multiline
+                  fullWidth
+                  minRows={4}
+                  maxRows={20}
+                  value={table.rows && table.rows.length > 0 ? table.rows.map((r: any) => (Array.isArray(r) ? r.join(', ') : String(r))).join('\n') : ''}
+                  onChange={e => {
+                    const newValue = e.target.value;
+                    setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const tables = [...(quizzes[idx].tables || [])];
+                      const newRows = newValue.split('\n').map(line => {
+                        if (!line.trim()) return [];
+                        return line.split(',').map(c => c.trim());
+                      });
+                      tables[tidx] = { ...tables[tidx], rows: newRows };
+                      quizzes[idx] = { ...quizzes[idx], tables };
+                      return { ...d, quizzes };
+                    });
+                  }}
+                  size="small"
+                  sx={{ mb: 1 }}
+                  onFocus={handleFocus}
+                />
+                <Button color="error" variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const tables = [...(quizzes[idx].tables || [])];
+                  tables.splice(tidx, 1);
+                  quizzes[idx] = { ...quizzes[idx], tables };
+                  return { ...d, quizzes };
+                })}>Remove Table</Button>
+              </Box>
+            ))}
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Charts</Typography>
+            <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => setNewDetail((d: typeof emptyDetail) => {
+              const quizzes = [...(d.quizzes || [])];
+              quizzes[idx] = { ...quizzes[idx], charts: [...(quizzes[idx].charts || []), { title: '', type: 'bar', description: '', labels: [], datasets: [] }] };
+              return { ...d, quizzes };
+            })}>Add Chart</Button>
+            {Array.isArray(quiz.charts) && quiz.charts.map((chart: any, cidx: number) => (
+              <Box key={cidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: 'background.paper' }}>
+                <TextField label="Chart Title" value={chart.title || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  charts[cidx] = { ...charts[cidx], title: e.target.value };
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                <Select value={chart.type || 'bar'} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  charts[cidx] = { ...charts[cidx], type: e.target.value };
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })} size="small" sx={{ width: 140, mb: 1 }}>
+                  <MenuItem value="bar">Bar Chart</MenuItem>
+                  <MenuItem value="pie">Pie Chart</MenuItem>
+                  <MenuItem value="histogram">Histogram</MenuItem>
+                  <MenuItem value="line">Line Chart</MenuItem>
+                </Select>
+                <TextField label="Description" value={chart.description || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  charts[cidx] = { ...charts[cidx], description: e.target.value };
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} onFocus={handleFocus} />
+                <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Labels (comma-separated)</Typography>
+                <TextField value={chart.labels ? chart.labels.join(', ') : ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  charts[cidx] = { ...charts[cidx], labels: e.target.value.split(',').map(l => l.trim()) };
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Datasets (add below)</Typography>
+                {Array.isArray(chart.datasets) && chart.datasets.map((dataset: any, dIdx: number) => (
+                  <Box key={dIdx} sx={{ mb: 1, p: 1, background: 'background.default', borderRadius: 1 }}>
+                    <TextField label={`Dataset ${dIdx + 1} Label`} value={dataset.label || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const charts = [...(quizzes[idx].charts || [])];
+                      const datasets = [...(charts[cidx].datasets || [])];
+                      datasets[dIdx] = { ...datasets[dIdx], label: e.target.value };
+                      charts[cidx] = { ...charts[cidx], datasets };
+                      quizzes[idx] = { ...quizzes[idx], charts };
+                      return { ...d, quizzes };
+                    })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                    <TextField label={`Dataset ${dIdx + 1} Data (comma-separated numbers)`} value={dataset.data ? dataset.data.join(', ') : ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const charts = [...(quizzes[idx].charts || [])];
+                      const datasets = [...(charts[cidx].datasets || [])];
+                      datasets[dIdx] = { ...datasets[dIdx], data: e.target.value.split(',').map((n: string) => Number(n.trim()) || 0) };
+                      charts[cidx] = { ...charts[cidx], datasets };
+                      quizzes[idx] = { ...quizzes[idx], charts };
+                      return { ...d, quizzes };
+                    })} size="small" fullWidth sx={{ mb: 1 }} onFocus={handleFocus} />
+                    <TextField label="Background Color (hex or name)" value={dataset.backgroundColor || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const charts = [...(quizzes[idx].charts || [])];
+                      const datasets = [...(charts[cidx].datasets || [])];
+                      datasets[dIdx] = { ...datasets[dIdx], backgroundColor: e.target.value };
+                      charts[cidx] = { ...charts[cidx], datasets };
+                      quizzes[idx] = { ...quizzes[idx], charts };
+                      return { ...d, quizzes };
+                    })} size="small" fullWidth sx={{ mb: 1 }} placeholder="#FF6384" onFocus={handleFocus} />
+                    <TextField label="Border Color (hex or name)" value={dataset.borderColor || ''} onChange={e => setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const charts = [...(quizzes[idx].charts || [])];
+                      const datasets = [...(charts[cidx].datasets || [])];
+                      datasets[dIdx] = { ...datasets[dIdx], borderColor: e.target.value };
+                      charts[cidx] = { ...charts[cidx], datasets };
+                      quizzes[idx] = { ...quizzes[idx], charts };
+                      return { ...d, quizzes };
+                    })} size="small" fullWidth placeholder="#FF6384" onFocus={handleFocus} />
+                    <Button color="error" variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
+                      const quizzes = [...(d.quizzes || [])];
+                      const charts = [...(quizzes[idx].charts || [])];
+                      const datasets = [...(charts[cidx].datasets || [])];
+                      datasets.splice(dIdx, 1);
+                      charts[cidx] = { ...charts[cidx], datasets };
+                      quizzes[idx] = { ...quizzes[idx], charts };
+                      return { ...d, quizzes };
+                    })} sx={{ mt: 1 }}>Remove Dataset</Button>
+                  </Box>
+                ))}
+                <Button variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  const datasets = [...(charts[cidx].datasets || [])];
+                  datasets.push({ label: '', data: [], backgroundColor: '', borderColor: '' });
+                  charts[cidx] = { ...charts[cidx], datasets };
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })} sx={{ mb: 1 }}>Add Dataset</Button>
+                <br />
+                <Button color="error" variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
+                  const quizzes = [...(d.quizzes || [])];
+                  const charts = [...(quizzes[idx].charts || [])];
+                  charts.splice(cidx, 1);
+                  quizzes[idx] = { ...quizzes[idx], charts };
+                  return { ...d, quizzes };
+                })}>Remove Chart</Button>
+              </Box>
+            ))}
+            <Divider sx={{ my: 2 }} />            <Button color="error" variant="outlined" size="small" onClick={() => setNewDetail((d: typeof emptyDetail) => {
               const quizzes = [...(d.quizzes || [])];
               quizzes.splice(idx, 1);
               return { ...d, quizzes };

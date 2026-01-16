@@ -8,7 +8,7 @@ import { Project } from '../../types/Project';
 import styles from './ProjectDetailsTab.module.css';
 import { buildProjectPayload } from '../../utils/projectPayloadBuilder';
 import { PROJECT_CONSTRAINTS } from '../../constants/projectConstraints';
-import { Paper, Typography, Divider, Button, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
+import { Paper, Typography, Divider, Button, Box, Grid, TextField, Switch, FormControlLabel, Snackbar, Alert, Select, MenuItem } from '@mui/material';
 import MarkdownToolbar from '../MarkdownToolbar';
 
 // For type-safe level keys
@@ -523,7 +523,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                   descArr = parsed.map((block: any) => {
                     if (typeof block === 'string') return { type: 'text', content: block };
                     if (block && typeof block === 'object' && typeof block.type === 'string') {
-                      if (["text","image","diagram","video"].includes(block.type)) return block;
+                      if (["text","image","diagram","video","table","chart"].includes(block.type)) return block;
                     }
                     return { type: 'text', content: '' };
                   });
@@ -1264,6 +1264,144 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                       <Button size="small" variant="outlined" onClick={() => updateNewQuiz(level, qi, prev => ({ ...prev, explanations: Array.isArray(prev.explanations) ? [...prev.explanations, ''] : [''] }))}>Add Explanation</Button>
                     </Grid>
                     <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Tables</Typography>
+                      <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => updateNewQuiz(level, qi, prev => ({ ...prev, tables: [...(prev.tables || []), { title: '', description: '', headers: [], rows: [] }] }))}>Add Table</Button>
+                      {Array.isArray(q.tables) && q.tables.map((table: any, tidx: number) => (
+                        <Box key={tidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: 'var(--surface)' }}>
+                          <TextField label="Table Title" value={table.title || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const tables = [...(prev.tables || [])];
+                            tables[tidx] = { ...tables[tidx], title: e.target.value };
+                            return { ...prev, tables };
+                          })} size="small" fullWidth sx={{ mb: 1 }} />
+                          <TextField label="Description" value={table.description || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const tables = [...(prev.tables || [])];
+                            tables[tidx] = { ...tables[tidx], description: e.target.value };
+                            return { ...prev, tables };
+                          })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} />
+                          <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Headers (comma-separated)</Typography>
+                          <TextField value={table.headers ? table.headers.join(', ') : ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const tables = [...(prev.tables || [])];
+                            tables[tidx] = { ...tables[tidx], headers: e.target.value.split(',').map(h => h.trim()) };
+                            return { ...prev, tables };
+                          })} size="small" fullWidth sx={{ mb: 1 }} />
+                          <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Rows (one per line, values comma-separated)</Typography>
+                          <TextField
+                            multiline
+                            fullWidth
+                            minRows={4}
+                            maxRows={20}
+                            value={table.rows && table.rows.length > 0 ? table.rows.map((r: any) => (Array.isArray(r) ? r.join(', ') : String(r))).join('\n') : ''}
+                            onChange={e => {
+                              const newValue = e.target.value;
+                              updateNewQuiz(level, qi, prev => {
+                                const tables = [...(prev.tables || [])];
+                                const newRows = newValue.split('\n').map(line => {
+                                  if (!line.trim()) return [];
+                                  return line.split(',').map(c => c.trim());
+                                });
+                                tables[tidx] = { ...tables[tidx], rows: newRows };
+                                return { ...prev, tables };
+                              });
+                            }}
+                            size="small"
+                            sx={{ mb: 1 }}
+                          />
+                          <Button color="error" variant="outlined" size="small" onClick={() => updateNewQuiz(level, qi, prev => {
+                            const tables = [...(prev.tables || [])];
+                            tables.splice(tidx, 1);
+                            return { ...prev, tables };
+                          })}>Remove Table</Button>
+                        </Box>
+                      ))}
+                      <Divider sx={{ my: 2 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Charts</Typography>
+                      <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => updateNewQuiz(level, qi, prev => ({ ...prev, charts: [...(prev.charts || []), { title: '', type: 'bar', description: '', labels: [], datasets: [] }] }))}>Add Chart</Button>
+                      {Array.isArray(q.charts) && q.charts.map((chart: any, cidx: number) => (
+                        <Box key={cidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: 'var(--surface)' }}>
+                          <TextField label="Chart Title" value={chart.title || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            charts[cidx] = { ...charts[cidx], title: e.target.value };
+                            return { ...prev, charts };
+                          })} size="small" fullWidth sx={{ mb: 1 }} />
+                          <Select value={chart.type || 'bar'} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            charts[cidx] = { ...charts[cidx], type: e.target.value };
+                            return { ...prev, charts };
+                          })} size="small" sx={{ width: 140, mb: 1 }}>
+                            <MenuItem value="bar">Bar Chart</MenuItem>
+                            <MenuItem value="pie">Pie Chart</MenuItem>
+                            <MenuItem value="histogram">Histogram</MenuItem>
+                            <MenuItem value="line">Line Chart</MenuItem>
+                          </Select>
+                          <TextField label="Description" value={chart.description || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            charts[cidx] = { ...charts[cidx], description: e.target.value };
+                            return { ...prev, charts };
+                          })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} />
+                          <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Labels (comma-separated)</Typography>
+                          <TextField value={chart.labels ? chart.labels.join(', ') : ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            charts[cidx] = { ...charts[cidx], labels: e.target.value.split(',').map(l => l.trim()) };
+                            return { ...prev, charts };
+                          })} size="small" fullWidth sx={{ mb: 1 }} />
+                          <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Datasets (add below)</Typography>
+                          {Array.isArray(chart.datasets) && chart.datasets.map((dataset: any, dIdx: number) => (
+                            <Box key={dIdx} sx={{ mb: 1, p: 1, background: 'var(--surface)', borderRadius: 1 }}>
+                              <TextField label={`Dataset ${dIdx + 1} Label`} value={dataset.label || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                                const charts = [...(prev.charts || [])];
+                                const datasets = [...(charts[cidx].datasets || [])];
+                                datasets[dIdx] = { ...datasets[dIdx], label: e.target.value };
+                                charts[cidx] = { ...charts[cidx], datasets };
+                                return { ...prev, charts };
+                              })} size="small" fullWidth sx={{ mb: 1 }} />
+                              <TextField label={`Dataset ${dIdx + 1} Data (comma-separated numbers)`} value={dataset.data ? dataset.data.join(', ') : ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                                const charts = [...(prev.charts || [])];
+                                const datasets = [...(charts[cidx].datasets || [])];
+                                datasets[dIdx] = { ...datasets[dIdx], data: e.target.value.split(',').map((n: string) => Number(n.trim()) || 0) };
+                                charts[cidx] = { ...charts[cidx], datasets };
+                                return { ...prev, charts };
+                              })} size="small" fullWidth sx={{ mb: 1 }} />
+                              <TextField label="Background Color (hex or name)" value={dataset.backgroundColor || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                                const charts = [...(prev.charts || [])];
+                                const datasets = [...(charts[cidx].datasets || [])];
+                                datasets[dIdx] = { ...datasets[dIdx], backgroundColor: e.target.value };
+                                charts[cidx] = { ...charts[cidx], datasets };
+                                return { ...prev, charts };
+                              })} size="small" fullWidth sx={{ mb: 1 }} placeholder="#FF6384" />
+                              <TextField label="Border Color (hex or name)" value={dataset.borderColor || ''} onChange={e => updateNewQuiz(level, qi, prev => {
+                                const charts = [...(prev.charts || [])];
+                                const datasets = [...(charts[cidx].datasets || [])];
+                                datasets[dIdx] = { ...datasets[dIdx], borderColor: e.target.value };
+                                charts[cidx] = { ...charts[cidx], datasets };
+                                return { ...prev, charts };
+                              })} size="small" fullWidth placeholder="#FF6384" />
+                              <Button color="error" variant="outlined" size="small" onClick={() => updateNewQuiz(level, qi, prev => {
+                                const charts = [...(prev.charts || [])];
+                                const datasets = [...(charts[cidx].datasets || [])];
+                                datasets.splice(dIdx, 1);
+                                charts[cidx] = { ...charts[cidx], datasets };
+                                return { ...prev, charts };
+                              })} sx={{ mt: 1 }}>Remove Dataset</Button>
+                            </Box>
+                          ))}
+                          <Button variant="outlined" size="small" onClick={() => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            const datasets = [...(charts[cidx].datasets || [])];
+                            datasets.push({ label: '', data: [], backgroundColor: '', borderColor: '' });
+                            charts[cidx] = { ...charts[cidx], datasets };
+                            return { ...prev, charts };
+                          })} sx={{ mb: 1 }}>Add Dataset</Button>
+                          <br />
+                          <Button color="error" variant="outlined" size="small" onClick={() => updateNewQuiz(level, qi, prev => {
+                            const charts = [...(prev.charts || [])];
+                            charts.splice(cidx, 1);
+                            return { ...prev, charts };
+                          })}>Remove Chart</Button>
+                        </Box>
+                      ))}
+                    </Grid>
+                    <Grid item xs={12}>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                         <Button size="small" variant="outlined" color="error" onClick={() => removeNewQuiz(level, qi)}>Remove Quiz</Button>
                       </Box>
@@ -1419,6 +1557,423 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                       ) : null}
                                     </Box>
                                   )}
+                                  {block.type === 'table' && (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, background: '#fafafa' }}>
+                                      <TextField
+                                        label="Table Title"
+                                        value={block.title || ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], title: e.target.value } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <TextField
+                                        label="Description"
+                                        value={block.description || ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], description: e.target.value } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        multiline
+                                        rows={2}
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <Typography variant="caption" sx={{ fontWeight: 600 }}>Headers (comma-separated)</Typography>
+                                      <TextField
+                                        value={block.headers ? block.headers.join(', ') : ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], headers: e.target.value.split(',').map(h => h.trim()) } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <Typography variant="caption" sx={{ fontWeight: 600 }}>Rows (one per line, values comma-separated)</Typography>
+                                      <TextField
+                                        multiline
+                                        rows={3}
+                                        maxRows={8}
+                                        value={block.rows && block.rows.length > 0 ? block.rows.map((r: any) => (Array.isArray(r) ? r.join(', ') : String(r))).join('\n') : ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            const newRows = e.target.value.split('\n').map(line => {
+                                              if (!line.trim()) return [];
+                                              return line.split(',').map(c => c.trim());
+                                            });
+                                            desc[bIdx] = { ...desc[bIdx], rows: newRows } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                    </Box>
+                                  )}
+                                  {block.type === 'chart' && (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1, background: '#fafafa' }}>
+                                      <TextField
+                                        label="Chart Title"
+                                        value={block.title || ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], title: e.target.value } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <Select
+                                        value={block.chartType || 'bar'}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], chartType: e.target.value } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        size="small"
+                                        sx={{ mb: 1 }}
+                                      >
+                                        <MenuItem value="bar">Bar Chart</MenuItem>
+                                        <MenuItem value="pie">Pie Chart</MenuItem>
+                                        <MenuItem value="histogram">Histogram</MenuItem>
+                                        <MenuItem value="line">Line Chart</MenuItem>
+                                      </Select>
+                                      <TextField
+                                        label="Description"
+                                        value={block.description || ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], description: e.target.value } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        multiline
+                                        rows={2}
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <Typography variant="caption" sx={{ fontWeight: 600 }}>Labels (comma-separated)</Typography>
+                                      <TextField
+                                        value={block.labels ? block.labels.join(', ') : ''}
+                                        onChange={e => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            desc[bIdx] = { ...desc[bIdx], labels: e.target.value.split(',').map(l => l.trim()) } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        fullWidth
+                                        size="small"
+                                        margin="dense"
+                                        onFocus={handleFocus}
+                                      />
+                                      <Typography variant="caption" sx={{ fontWeight: 600 }}>Datasets</Typography>
+                                      {Array.isArray(block.datasets) && block.datasets.map((dataset: any, dIdx: number) => (
+                                        <Box key={dIdx} sx={{ mb: 1, p: 1, background: '#f0f0f0', borderRadius: 1 }}>
+                                          <TextField
+                                            label={`Dataset ${dIdx + 1} Label`}
+                                            value={dataset.label || ''}
+                                            onChange={e => {
+                                              setEditProject(prev => {
+                                                if (!prev) return prev;
+                                                const concepts = [...prev.educationalContent[level].concepts];
+                                                const desc = [...concepts[i].description];
+                                                const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                                datasets[dIdx] = { ...datasets[dIdx], label: e.target.value };
+                                                desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                                concepts[i] = { ...concepts[i], description: desc };
+                                                return {
+                                                  ...prev,
+                                                  educationalContent: {
+                                                    ...prev.educationalContent,
+                                                    [level]: {
+                                                      ...prev.educationalContent[level],
+                                                      concepts
+                                                    }
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            margin="dense"
+                                            onFocus={handleFocus}
+                                          />
+                                          <TextField
+                                            label={`Dataset ${dIdx + 1} Data (comma-separated numbers)`}
+                                            value={dataset.data ? dataset.data.join(', ') : ''}
+                                            onChange={e => {
+                                              setEditProject(prev => {
+                                                if (!prev) return prev;
+                                                const concepts = [...prev.educationalContent[level].concepts];
+                                                const desc = [...concepts[i].description];
+                                                const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                                datasets[dIdx] = { ...datasets[dIdx], data: e.target.value.split(',').map((n: string) => Number(n.trim()) || 0) };
+                                                desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                                concepts[i] = { ...concepts[i], description: desc };
+                                                return {
+                                                  ...prev,
+                                                  educationalContent: {
+                                                    ...prev.educationalContent,
+                                                    [level]: {
+                                                      ...prev.educationalContent[level],
+                                                      concepts
+                                                    }
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            margin="dense"
+                                            onFocus={handleFocus}
+                                          />
+                                          <TextField
+                                            label="Background Color"
+                                            value={dataset.backgroundColor || ''}
+                                            onChange={e => {
+                                              setEditProject(prev => {
+                                                if (!prev) return prev;
+                                                const concepts = [...prev.educationalContent[level].concepts];
+                                                const desc = [...concepts[i].description];
+                                                const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                                datasets[dIdx] = { ...datasets[dIdx], backgroundColor: e.target.value };
+                                                desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                                concepts[i] = { ...concepts[i], description: desc };
+                                                return {
+                                                  ...prev,
+                                                  educationalContent: {
+                                                    ...prev.educationalContent,
+                                                    [level]: {
+                                                      ...prev.educationalContent[level],
+                                                      concepts
+                                                    }
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            margin="dense"
+                                            placeholder="#FF6384"
+                                            onFocus={handleFocus}
+                                          />
+                                          <TextField
+                                            label="Border Color"
+                                            value={dataset.borderColor || ''}
+                                            onChange={e => {
+                                              setEditProject(prev => {
+                                                if (!prev) return prev;
+                                                const concepts = [...prev.educationalContent[level].concepts];
+                                                const desc = [...concepts[i].description];
+                                                const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                                datasets[dIdx] = { ...datasets[dIdx], borderColor: e.target.value };
+                                                desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                                concepts[i] = { ...concepts[i], description: desc };
+                                                return {
+                                                  ...prev,
+                                                  educationalContent: {
+                                                    ...prev.educationalContent,
+                                                    [level]: {
+                                                      ...prev.educationalContent[level],
+                                                      concepts
+                                                    }
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            fullWidth
+                                            size="small"
+                                            margin="dense"
+                                            placeholder="#FF6384"
+                                            onFocus={handleFocus}
+                                          />
+                                          <Button
+                                            color="error"
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => {
+                                              setEditProject(prev => {
+                                                if (!prev) return prev;
+                                                const concepts = [...prev.educationalContent[level].concepts];
+                                                const desc = [...concepts[i].description];
+                                                const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                                datasets.splice(dIdx, 1);
+                                                desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                                concepts[i] = { ...concepts[i], description: desc };
+                                                return {
+                                                  ...prev,
+                                                  educationalContent: {
+                                                    ...prev.educationalContent,
+                                                    [level]: {
+                                                      ...prev.educationalContent[level],
+                                                      concepts
+                                                    }
+                                                  }
+                                                };
+                                              });
+                                            }}
+                                            sx={{ mt: 1 }}
+                                          >
+                                            Remove Dataset
+                                          </Button>
+                                        </Box>
+                                      ))}
+                                      <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => {
+                                          setEditProject(prev => {
+                                            if (!prev) return prev;
+                                            const concepts = [...prev.educationalContent[level].concepts];
+                                            const desc = [...concepts[i].description];
+                                            const datasets = [...((desc[bIdx] as any).datasets || [])];
+                                            datasets.push({ label: '', data: [], backgroundColor: '', borderColor: '' });
+                                            desc[bIdx] = { ...desc[bIdx], datasets } as any;
+                                            concepts[i] = { ...concepts[i], description: desc };
+                                            return {
+                                              ...prev,
+                                              educationalContent: {
+                                                ...prev.educationalContent,
+                                                [level]: {
+                                                  ...prev.educationalContent[level],
+                                                  concepts
+                                                }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        sx={{ mb: 1 }}
+                                      >
+                                        Add Dataset
+                                      </Button>
+                                    </Box>
+                                  )}
                                   {/* Remove block button */}
                                   <Button variant="outlined" color="error" size="small" onClick={() => {
                                     setEditProject(prev => {
@@ -1485,7 +2040,7 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                 </Box>
                               ))}
                               {/* Add new block buttons */}
-                              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                              <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
                                 <Button variant="outlined" size="small" onClick={() => {
                                   setEditProject(prev => {
                                     if (!prev) return prev;
@@ -1563,6 +2118,44 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                     };
                                   });
                                 }}>Add Video</Button>
+                                <Button variant="outlined" size="small" onClick={() => {
+                                  setEditProject(prev => {
+                                    if (!prev) return prev;
+                                    const concepts = [...prev.educationalContent[level].concepts];
+                                    const desc = Array.isArray(concepts[i].description) ? [...concepts[i].description] : [];
+                                    desc.push({ type: 'table', title: '', description: '', headers: [], rows: [] });
+                                    concepts[i] = { ...concepts[i], description: desc };
+                                    return {
+                                      ...prev,
+                                      educationalContent: {
+                                        ...prev.educationalContent,
+                                        [level]: {
+                                          ...prev.educationalContent[level],
+                                          concepts
+                                        }
+                                      }
+                                    };
+                                  });
+                                }}>Add Table</Button>
+                                <Button variant="outlined" size="small" onClick={() => {
+                                  setEditProject(prev => {
+                                    if (!prev) return prev;
+                                    const concepts = [...prev.educationalContent[level].concepts];
+                                    const desc = Array.isArray(concepts[i].description) ? [...concepts[i].description] : [];
+                                    desc.push({ type: 'chart', title: '', chartType: 'bar', description: '', labels: [], datasets: [] });
+                                    concepts[i] = { ...concepts[i], description: desc };
+                                    return {
+                                      ...prev,
+                                      educationalContent: {
+                                        ...prev.educationalContent,
+                                        [level]: {
+                                          ...prev.educationalContent[level],
+                                          concepts
+                                        }
+                                      }
+                                    };
+                                  });
+                                }}>Add Chart</Button>
                               </Box>
                             </Box>
                           </Paper>
@@ -1638,6 +2231,144 @@ export default function ProjectDetailsTab({ projects, onAddProject, onEditProjec
                                   </Box>
                                 ))}
                                 <Button size="small" variant="outlined" onClick={() => updateEditQuiz(level, qi, prev => ({ ...prev, explanations: Array.isArray(prev.explanations) ? [...prev.explanations, ''] : [''] }))}>Add Explanation</Button>
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Tables</Typography>
+                                <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => updateEditQuiz(level, qi, prev => ({ ...prev, tables: [...(prev.tables || []), { title: '', description: '', headers: [], rows: [] }] }))}>Add Table</Button>
+                                {Array.isArray(q.tables) && q.tables.map((table: any, tidx: number) => (
+                                  <Box key={tidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: '#f9f9f9' }}>
+                                    <TextField label="Table Title" value={table.title || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const tables = [...(prev.tables || [])];
+                                      tables[tidx] = { ...tables[tidx], title: e.target.value };
+                                      return { ...prev, tables };
+                                    })} size="small" fullWidth sx={{ mb: 1 }} />
+                                    <TextField label="Description" value={table.description || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const tables = [...(prev.tables || [])];
+                                      tables[tidx] = { ...tables[tidx], description: e.target.value };
+                                      return { ...prev, tables };
+                                    })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} />
+                                    <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Headers (comma-separated)</Typography>
+                                    <TextField value={table.headers ? table.headers.join(', ') : ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const tables = [...(prev.tables || [])];
+                                      tables[tidx] = { ...tables[tidx], headers: e.target.value.split(',').map(h => h.trim()) };
+                                      return { ...prev, tables };
+                                    })} size="small" fullWidth sx={{ mb: 1 }} />
+                                    <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Rows (one per line, values comma-separated)</Typography>
+                                    <TextField
+                                      multiline
+                                      fullWidth
+                                      minRows={4}
+                                      maxRows={20}
+                                      value={table.rows && table.rows.length > 0 ? table.rows.map((r: any) => (Array.isArray(r) ? r.join(', ') : String(r))).join('\n') : ''}
+                                      onChange={e => {
+                                        const newValue = e.target.value;
+                                        updateEditQuiz(level, qi, prev => {
+                                          const tables = [...(prev.tables || [])];
+                                          const newRows = newValue.split('\n').map(line => {
+                                            if (!line.trim()) return [];
+                                            return line.split(',').map(c => c.trim());
+                                          });
+                                          tables[tidx] = { ...tables[tidx], rows: newRows };
+                                          return { ...prev, tables };
+                                        });
+                                      }}
+                                      size="small"
+                                      sx={{ mb: 1 }}
+                                    />
+                                    <Button color="error" variant="outlined" size="small" onClick={() => updateEditQuiz(level, qi, prev => {
+                                      const tables = [...(prev.tables || [])];
+                                      tables.splice(tidx, 1);
+                                      return { ...prev, tables };
+                                    })}>Remove Table</Button>
+                                  </Box>
+                                ))}
+                                <Divider sx={{ my: 2 }} />
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Charts</Typography>
+                                <Button variant="outlined" size="small" sx={{ mb: 2 }} onClick={() => updateEditQuiz(level, qi, prev => ({ ...prev, charts: [...(prev.charts || []), { title: '', type: 'bar', description: '', labels: [], datasets: [] }] }))}>Add Chart</Button>
+                                {Array.isArray(q.charts) && q.charts.map((chart: any, cidx: number) => (
+                                  <Box key={cidx} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, background: '#f9f9f9' }}>
+                                    <TextField label="Chart Title" value={chart.title || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      charts[cidx] = { ...charts[cidx], title: e.target.value };
+                                      return { ...prev, charts };
+                                    })} size="small" fullWidth sx={{ mb: 1 }} />
+                                    <Select value={chart.type || 'bar'} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      charts[cidx] = { ...charts[cidx], type: e.target.value };
+                                      return { ...prev, charts };
+                                    })} size="small" sx={{ width: 140, mb: 1 }}>
+                                      <MenuItem value="bar">Bar Chart</MenuItem>
+                                      <MenuItem value="pie">Pie Chart</MenuItem>
+                                      <MenuItem value="histogram">Histogram</MenuItem>
+                                      <MenuItem value="line">Line Chart</MenuItem>
+                                    </Select>
+                                    <TextField label="Description" value={chart.description || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      charts[cidx] = { ...charts[cidx], description: e.target.value };
+                                      return { ...prev, charts };
+                                    })} size="small" fullWidth multiline rows={2} sx={{ mb: 1 }} />
+                                    <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Labels (comma-separated)</Typography>
+                                    <TextField value={chart.labels ? chart.labels.join(', ') : ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      charts[cidx] = { ...charts[cidx], labels: e.target.value.split(',').map(l => l.trim()) };
+                                      return { ...prev, charts };
+                                    })} size="small" fullWidth sx={{ mb: 1 }} />
+                                    <Typography variant="caption" sx={{ mb: 1, display: 'block' }}>Datasets (add below)</Typography>
+                                    {Array.isArray(chart.datasets) && chart.datasets.map((dataset: any, dIdx: number) => (
+                                      <Box key={dIdx} sx={{ mb: 1, p: 1, background: '#efefef', borderRadius: 1 }}>
+                                        <TextField label={`Dataset ${dIdx + 1} Label`} value={dataset.label || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                          const charts = [...(prev.charts || [])];
+                                          const datasets = [...(charts[cidx].datasets || [])];
+                                          datasets[dIdx] = { ...datasets[dIdx], label: e.target.value };
+                                          charts[cidx] = { ...charts[cidx], datasets };
+                                          return { ...prev, charts };
+                                        })} size="small" fullWidth sx={{ mb: 1 }} />
+                                        <TextField label={`Dataset ${dIdx + 1} Data (comma-separated numbers)`} value={dataset.data ? dataset.data.join(', ') : ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                          const charts = [...(prev.charts || [])];
+                                          const datasets = [...(charts[cidx].datasets || [])];
+                                          datasets[dIdx] = { ...datasets[dIdx], data: e.target.value.split(',').map((n: string) => Number(n.trim()) || 0) };
+                                          charts[cidx] = { ...charts[cidx], datasets };
+                                          return { ...prev, charts };
+                                        })} size="small" fullWidth sx={{ mb: 1 }} />
+                                        <TextField label="Background Color (hex or name)" value={dataset.backgroundColor || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                          const charts = [...(prev.charts || [])];
+                                          const datasets = [...(charts[cidx].datasets || [])];
+                                          datasets[dIdx] = { ...datasets[dIdx], backgroundColor: e.target.value };
+                                          charts[cidx] = { ...charts[cidx], datasets };
+                                          return { ...prev, charts };
+                                        })} size="small" fullWidth sx={{ mb: 1 }} placeholder="#FF6384" />
+                                        <TextField label="Border Color (hex or name)" value={dataset.borderColor || ''} onChange={e => updateEditQuiz(level, qi, prev => {
+                                          const charts = [...(prev.charts || [])];
+                                          const datasets = [...(charts[cidx].datasets || [])];
+                                          datasets[dIdx] = { ...datasets[dIdx], borderColor: e.target.value };
+                                          charts[cidx] = { ...charts[cidx], datasets };
+                                          return { ...prev, charts };
+                                        })} size="small" fullWidth placeholder="#FF6384" />
+                                        <Button color="error" variant="outlined" size="small" onClick={() => updateEditQuiz(level, qi, prev => {
+                                          const charts = [...(prev.charts || [])];
+                                          const datasets = [...(charts[cidx].datasets || [])];
+                                          datasets.splice(dIdx, 1);
+                                          charts[cidx] = { ...charts[cidx], datasets };
+                                          return { ...prev, charts };
+                                        })} sx={{ mt: 1 }}>Remove Dataset</Button>
+                                      </Box>
+                                    ))}
+                                    <Button variant="outlined" size="small" onClick={() => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      const datasets = [...(charts[cidx].datasets || [])];
+                                      datasets.push({ label: '', data: [], backgroundColor: '', borderColor: '' });
+                                      charts[cidx] = { ...charts[cidx], datasets };
+                                      return { ...prev, charts };
+                                    })} sx={{ mb: 1 }}>Add Dataset</Button>
+                                    <br />
+                                    <Button color="error" variant="outlined" size="small" onClick={() => updateEditQuiz(level, qi, prev => {
+                                      const charts = [...(prev.charts || [])];
+                                      charts.splice(cidx, 1);
+                                      return { ...prev, charts };
+                                    })}>Remove Chart</Button>
+                                  </Box>
+                                ))}
                               </Grid>
                               <Grid item xs={12}>
                                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>

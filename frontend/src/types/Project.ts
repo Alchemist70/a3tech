@@ -1,7 +1,9 @@
 // Block type for concept descriptions
 export type ConceptBlock =
   | { type: 'text'; content: string }
-  | { type: 'image' | 'diagram' | 'video'; url: string };
+  | { type: 'image' | 'diagram' | 'video'; url: string }
+  | { type: 'table'; title: string; description: string; headers: string[]; rows: string[][] }
+  | { type: 'chart'; title: string; chartType: string; description: string; labels: string[]; datasets: Array<{ label: string; data: number[]; backgroundColor: string; borderColor: string }> };
 
 export interface Project {
   id: string;

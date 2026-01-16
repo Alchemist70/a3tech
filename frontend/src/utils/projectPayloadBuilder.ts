@@ -86,7 +86,7 @@ export function buildProjectPayload(
                   return { type: 'text', content: block };
                 }
                 if (block && typeof block === 'object' && typeof block.type === 'string') {
-                  if (['text', 'image', 'diagram', 'video'].includes(block.type)) {
+                  if (['text', 'image', 'diagram', 'video', 'table', 'chart'].includes(block.type)) {
                     return block;
                   }
                 }
