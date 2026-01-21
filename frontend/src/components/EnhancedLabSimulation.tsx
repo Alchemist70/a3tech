@@ -1198,7 +1198,7 @@ const SaltAnalysisSimulation: React.FC<{
           {/* Feedback */}
           {showFeedback && (
             <Card sx={{ mb: 2, backgroundColor: mode === 'practice' ? '#e8f5e9' : '#fff3e0' }}>
-              <CardHeader title="Feedback" />
+              <CardHeader title="Feedback" sx={{ color: '#000' }} />
               <CardContent>
                 <Box
                   dangerouslySetInnerHTML={{
@@ -1210,7 +1210,7 @@ const SaltAnalysisSimulation: React.FC<{
                   }}
                   sx={{ color: '#000' }}
                 />
-                <Button variant="outlined" size="small" onClick={() => setShowFeedback(false)} sx={{ mt: 2, color: '#000', borderColor: '#555', backgroundColor: '#fff', '&:hover': { backgroundColor: '#f0f0f0', borderColor: '#333' }, }}>
+                <Button variant="contained" size="small" onClick={() => setShowFeedback(false)} sx={{ mt: 2, color: '#fff', backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>
                   Close
                 </Button>
               </CardContent>
