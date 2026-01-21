@@ -319,6 +319,16 @@ const Sidebar: React.FC<{ open: boolean; onClose: () => void; variant?: 'permane
               <ListItem
                 button
                 component={Link}
+                to="/labs"
+                selected={location.pathname.startsWith('/labs')}
+              >
+                <ListItemIcon><ScienceIcon /></ListItemIcon>
+                <ListItemText primary="Labs" className={styles.sidebarListItemText} />
+              </ListItem>
+
+              <ListItem
+                button
+                component={Link}
                 to="/faq"
                 selected={location.pathname.startsWith('/faq')}
               >

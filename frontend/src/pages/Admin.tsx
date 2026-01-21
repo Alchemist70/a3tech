@@ -23,6 +23,7 @@ import AdminJambTopicDetailsTab from '../components/admin/AdminJambTopicDetailsT
 import AdminUsersTab from '../components/admin/AdminUsersTab';
 import AdminJambQuestionBankTab from '../components/admin/AdminJambQuestionBankTab';
 import AdminWaecQuestionBankTab from '../components/admin/AdminWaecQuestionBankTab';
+import AdminLabsTab from '../components/admin/AdminLabsTab';
 import RichTextEditor from '../components/admin/RichTextEditor';
 import styles from '../components/Sidebar.module.css';
 const tabLabels = [
@@ -45,6 +46,7 @@ const tabLabels = [
   'JAMB Topic Details',
   'JAMB Question Bank',
   'WAEC Question Bank',
+  'Labs',
   'Users',
 ];
 
@@ -2570,6 +2572,9 @@ const Admin: React.FC = () => {
         <AdminWaecQuestionBankTab />
       </TabPanel>
       <TabPanel value={tab} index={19}>
+        <AdminLabsTab />
+      </TabPanel>
+      <TabPanel value={tab} index={20}>
         <AdminUsersTab />
       </TabPanel>
       <TabPasswordModal

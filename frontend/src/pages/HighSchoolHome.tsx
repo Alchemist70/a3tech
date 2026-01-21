@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowForward, School, EmojiEvents, MenuBook, Description } from '@mui/icons-material';
+import { ArrowForward, School, EmojiEvents, MenuBook, Description, Science } from '@mui/icons-material';
 import api from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,6 +35,15 @@ const examSections = [
     color: '#4ECDC4',
     hoverColor: '#45B7D1',
     slug: 'jamb',
+  },
+  {
+    title: 'Labs',
+    fullName: 'Laboratory Practicals',
+    description: 'Learn and simulate essential Chemistry, Physics, and Biology practicals with interactive demonstrations.',
+    icon: <Science sx={{ fontSize: 50, color: '#ffffff' }} />,
+    color: '#95E1D3',
+    hoverColor: '#7FD8C4',
+    slug: 'labs',
   },
 ];
 

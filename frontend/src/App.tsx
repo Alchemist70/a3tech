@@ -56,6 +56,7 @@ import WaecTest from './pages/WaecTest';
 import WaecResult from './pages/WaecResult';
 import WaecCheckResult from './pages/WaecCheckResult';
 import { useSafeExamMode } from './contexts/SafeExamModeContext';
+import Labs from './pages/Labs';
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -151,6 +152,7 @@ function AppContent() {
                 } />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/labs" element={<Labs />} />
                 <Route path="/settings" element={
                   <ProtectedRoute>
                     <Settings />

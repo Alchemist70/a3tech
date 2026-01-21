@@ -40,6 +40,7 @@ const goldMemberStatus_1 = __importDefault(require("./routes/goldMemberStatus"))
 const mockTest_1 = __importDefault(require("./routes/mockTest"));
 const questionBank_1 = __importDefault(require("./routes/questionBank"));
 const sebTemplateRoutes = require('./routes/sebTemplateRoutes');
+const labs_1 = __importDefault(require("./routes/labs"));
 // Load environment variables
 dotenv_1.default.config();
 
@@ -355,6 +356,9 @@ app.use('/api/mock-test', mockTest_1.default);
 app.use('/api/question-bank', questionBank_1.default);
 // SEB template admin routes (requires auth)
 app.use('/api/seb-templates', sebTemplateRoutes);
+// Labs practical endpoints
+app.use('/api/labs', labs_1.default);
+app.use('/api/lab-results', require('./routes/labResults'));
 // Exam session endpoints (proctoring)
 app.use('/api/exam-sessions', require('./routes/examSessionRoutes'));
 // Health check endpoint
