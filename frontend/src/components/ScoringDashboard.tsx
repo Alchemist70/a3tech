@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -68,7 +68,7 @@ const ScoringDashboard: React.FC<ScoringDashboardProps> = ({ userId }) => {
   const [subjectStats, setSubjectStats] = useState<LabStatistic[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -102,11 +102,11 @@ const ScoringDashboard: React.FC<ScoringDashboardProps> = ({ userId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     fetchStatistics();
-  }, []);
+  }, [fetchStatistics]);
 
   const getGradeColor = (grade: string) => {
     const colors: Record<string, string> = {

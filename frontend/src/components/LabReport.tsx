@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -38,24 +38,7 @@ const LabReport: React.FC<LabReportProps> = ({
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const generateReport = async () => {
-      setLoading(true);
-      try {
-        const response = await api.get(`/lab-results/session/${labSessionId}/report`);
-        setReportHtml(response.data.html);
-      } catch (error) {
-        console.error('Error generating report:', error);
-        // Generate fallback report
-        generateFallbackReport();
-      } finally {
-        setLoading(false);
-      }
-    };
-    generateReport();
-  }, []);
-
-  const generateFallbackReport = () => {
+  const generateFallbackReport = useCallback(() => {
     const html = `
       <div style="padding: 40px; font-family: Arial, sans-serif;">
         <h1 style="color: #667eea; text-align: center;">Lab Report</h1>
@@ -110,7 +93,24 @@ const LabReport: React.FC<LabReportProps> = ({
       </div>
     `;
     setReportHtml(html);
-  };
+  }, [labData, scoring, simulationData]);
+
+  useEffect(() => {
+    const generateReport = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get(`/lab-results/session/${labSessionId}/report`);
+        setReportHtml(response.data.html);
+      } catch (error) {
+        console.error('Error generating report:', error);
+        // Generate fallback report
+        generateFallbackReport();
+      } finally {
+        setLoading(false);
+      }
+    };
+    generateReport();
+  }, [labSessionId, generateFallbackReport]);
 
   const downloadPDF = async () => {
     if (!reportRef.current) return;
