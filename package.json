@@ -12,6 +12,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/uuid": "^10.0.0",
