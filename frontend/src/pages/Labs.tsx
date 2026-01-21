@@ -72,6 +72,80 @@ const Labs: React.FC = () => {
     Biology: [] as Lab[],
   });
 
+  const [activeFieldElement, setActiveFieldElement] = useState<HTMLTextAreaElement | HTMLInputElement | null>(null);
+  const [activeFieldCallbacks, setActiveFieldCallbacks] = useState<{ getter: () => string; setter: (val: string) => void } | null>(null);
+
+  const applyMarkdownSnippet = (before: string, after: string = before) => {
+    const activeElement = activeFieldElement;
+    const fieldCallbacks = activeFieldCallbacks;
+    
+    if (!activeElement || !fieldCallbacks) return;
+    if (activeElement.tagName !== 'TEXTAREA' && activeElement.tagName !== 'INPUT') return;
+
+    const start = activeElement.selectionStart ?? 0;
+    const end = activeElement.selectionEnd ?? 0;
+    const fullText = activeElement.value;
+    const selectedText = fullText.substring(start, end) || 'text';
+    const beforeText = fullText.substring(0, start);
+    const afterText = fullText.substring(end);
+    
+    // Build the new text with markdown syntax wrapped around selection
+    const newText = beforeText + before + selectedText + after + afterText;
+    // Call the setter with the new text
+    fieldCallbacks.setter(newText);
+
+    // Restore focus and selection
+    setTimeout(() => {
+      activeElement.focus();
+      const newCursorPos = start + before.length + selectedText.length;
+      activeElement.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const registerField = (get: () => string, set: (val: string) => void) => (e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    // Store element and callbacks separately to avoid stale closures
+    setActiveFieldElement(e.currentTarget);
+    setActiveFieldCallbacks({ getter: get, setter: set });
+  };
+
+  const MarkdownToolbar = () => (
+    <Box
+      sx={{
+        backgroundColor: '#0b1224',
+        border: '1px solid #1f2a44',
+        borderRadius: 1,
+        p: 1,
+        mb: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap',
+      }}
+    >
+      <Typography variant="body2" sx={{ color: '#ffffff', fontWeight: 'bold' }}>
+        Markdown Toolbar
+      </Typography>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('**', '**')}>
+        Bold
+      </Button>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('*', '*')}>
+        Italic
+      </Button>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('^', '^')}>
+        Superscript
+      </Button>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('~', '~')}>
+        Subscript
+      </Button>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('- ')}>
+        Bullet
+      </Button>
+      <Button size="small" variant="outlined" onClick={() => applyMarkdownSnippet('\n')}>
+        New Line
+      </Button>
+    </Box>
+  );
+
   useEffect(() => {
     const fetchLabs = async () => {
       setLoading(true);
@@ -401,78 +475,95 @@ const Labs: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <>
       {/* View Mode Navigation */}
       {viewMode !== 'list' && (
-        <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={() => setViewMode('list')}
-          >
-            Back to Labs
-          </Button>
-          {currentUser && (
+        <Container maxWidth="lg" sx={{ py: 0, position: 'relative' }}>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
             <Button
-              variant={viewMode === 'dashboard' ? 'contained' : 'outlined'}
-              onClick={() => setViewMode('dashboard')}
+              variant="outlined"
+              onClick={() => setViewMode('list')}
             >
-              Scoring Dashboard
+              Back to Labs
             </Button>
-          )}
-        </Box>
+            {currentUser && (
+              <Button
+                variant={viewMode === 'dashboard' ? 'contained' : 'outlined'}
+                onClick={() => setViewMode('dashboard')}
+              >
+                Scoring Dashboard
+              </Button>
+            )}
+          </Box>
+        </Container>
       )}
 
       {/* Dashboard View */}
       {viewMode === 'dashboard' && currentUser && (
-        <Box>
+        <Container maxWidth="lg" sx={{ py: 0 }}>
           <Typography variant="h4" sx={{ mb: 3 }}>
             📊 Scoring Dashboard
           </Typography>
           <ScoringDashboard userId={currentUser._id || currentUser.id} />
-        </Box>
+        </Container>
       )}
 
       {/* Simulation View */}
       {viewMode === 'simulation' && selectedLab && labSessionId && (
-        <Box>
-          <Typography variant="h4" sx={{ mb: 3 }}>
-            🔬 {selectedLab.title} - Interactive Simulation
-          </Typography>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Complete the simulation by recording measurements and observations. Your
-            work will be automatically saved and graded.
-          </Alert>
-          <EnhancedLabSimulation
-            labId={labSessionId}
-            labTitle={selectedLab.title}
-            subject={selectedLab.subject}
-            onSave={handleSaveSimulation}
-          />
-          <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handleSubmitLab}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Submit & Grade'}
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setViewMode('list');
-                setLabSessionId(null);
-              }}
-            >
-              Cancel
-            </Button>
+        <>
+          {/* Header and Toolbar - Sticky Container - OUTSIDE Container for proper sticky positioning */}
+          <Box sx={{ position: 'sticky', top: 0, zIndex: 25, backgroundColor: '#0b1224', borderBottom: '1px solid #1f2a44' }}>
+            {/* Header */}
+            <Box sx={{ pb: 2, borderBottom: '1px solid #2a3a4a', maxWidth: 1280, margin: '0 auto', px: { xs: 2, sm: 3, md: 4 } }}>
+              <Typography variant="h4" sx={{ mb: 2, pt: 4 }}>
+                🔬 {selectedLab.title} - Interactive Simulation
+              </Typography>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Complete the simulation by recording measurements and observations. Your
+                work will be automatically saved and graded.
+              </Alert>
+            </Box>
+            
+            {/* Markdown Toolbar */}
+            <Box sx={{ py: 1.5, maxWidth: 1280, margin: '0 auto', px: { xs: 2, sm: 3, md: 4 } }}>
+              <MarkdownToolbar />
+            </Box>
           </Box>
-        </Box>
+          
+          <Container maxWidth="lg" sx={{ py: 0, pt: 2 }}>
+            <EnhancedLabSimulation
+              labId={labSessionId}
+              labTitle={selectedLab.title}
+              subject={selectedLab.subject}
+              onSave={handleSaveSimulation}
+              registerField={registerField}
+            />
+            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleSubmitLab}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} /> : 'Submit & Grade'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setViewMode('list');
+                  setLabSessionId(null);
+              }}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Container>
+        </>
       )}
 
       {/* Report View */}
       {viewMode === 'report' && selectedLab && labSessionId && (
-        <Box>
+        <Container maxWidth="lg" sx={{ py: 0 }}>
           <Typography variant="h4" sx={{ mb: 3 }}>
             📄 Lab Report - {selectedLab.title}
           </Typography>
@@ -499,12 +590,12 @@ const Labs: React.FC = () => {
               setScoring(null);
             }}
           />
-        </Box>
+        </Container>
       )}
 
       {/* Labs List View */}
       {viewMode === 'list' && (
-        <>
+        <Container maxWidth="lg" sx={{ py: 0 }}>
           {/* Header */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -700,9 +791,9 @@ const Labs: React.FC = () => {
               </Grid>
             </Grid>
           </Box>
-        </>
+        </Container>
       )}
-    </Container>
+    </>
   );
 };
 

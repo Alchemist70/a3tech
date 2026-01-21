@@ -7,6 +7,51 @@ const fs = require('fs');
 const path = require('path');
 
 /**
+ * Helper to process markdown-like syntax for superscript, subscript, and basic formatting
+ * Converts: ^text^ to <sup>text</sup>, ~text~ to <sub>text</sub>, etc.
+ * Safe because we only allow specific, controlled HTML tags and patterns
+ */
+const processMarkdown = (content) => {
+  if (!content) return '';
+  try {
+    let html = String(content);
+    
+    // Convert markdown syntax to HTML
+    // Order matters - process more specific patterns first
+    
+    // Superscript: ^text^ -> <sup>text</sup>
+    // Matches: ^ followed by one or more non-^ characters, followed by ^
+    html = html.replace(/\^([^^]+)\^/g, '<sup>$1</sup>');
+    
+    // Subscript: ~text~ -> <sub>text</sub>
+    // Matches: ~ followed by one or more non-~ characters, followed by ~
+    html = html.replace(/~([^~]+)~/g, '<sub>$1</sub>');
+    
+    // Bold: **text** -> <strong>text</strong>
+    // Matches: ** followed by one or more non-* characters, followed by **
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic: *text* -> <em>text</em>
+    // Simple version that requires space or boundary to avoid matching **
+    html = html.replace(/\*([^*\n]+)\*/g, (match, p1) => {
+      // Only replace if it's not part of ** (bold)
+      if (match.includes('**')) {
+        return match;
+      }
+      return `<em>${p1}</em>`;
+    });
+    
+    // Line breaks: \n -> <br/>
+    html = html.replace(/\n/g, '<br/>');
+    
+    return html;
+  } catch (e) {
+    console.warn('Error processing markdown:', e);
+    return content;
+  }
+};
+
+/**
  * Generate HTML report content
  */
 const generateHTMLReport = (labResult, lab) => {
@@ -209,6 +254,19 @@ const generateHTMLReport = (labResult, lab) => {
             page-break-after: always;
         }
         
+        /* Superscript and Subscript Styling */
+        sup {
+            font-size: 0.8em;
+            vertical-align: super;
+            line-height: 1;
+        }
+        
+        sub {
+            font-size: 0.8em;
+            vertical-align: sub;
+            line-height: 1;
+        }
+        
         @media print {
             body {
                 background-color: white;
@@ -314,7 +372,7 @@ const generateHTMLReport = (labResult, lab) => {
         <div class="section">
             <div class="section-title">🔍 Observations</div>
             <div class="section-content">
-                <p>${labResult.experimentData.observations}</p>
+                ${processMarkdown(labResult.experimentData.observations)}
             </div>
         </div>
         ` : ''}

@@ -12,6 +12,7 @@ import {
   Paper,
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
+import DOMPurify from 'dompurify';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -54,6 +55,7 @@ interface LabSimulationProps {
   labTitle: string;
   subject: string;
   onSave: (data: SimulationState) => void;
+  registerField: (get: () => string, set: (val: string) => void) => (e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
 }
 
 const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
@@ -61,6 +63,7 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
   labTitle,
   subject,
   onSave,
+  registerField,
 }) => {
   const [simulationState, setSimulationState] = useState<SimulationState>({
     measurements: [],
@@ -72,6 +75,7 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
 
   const [newMeasurement, setNewMeasurement] = useState({ name: '', value: '', unit: '' });
   const [showDataInput, setShowDataInput] = useState(false);
+
   // const [reportDialogOpen, setReportDialogOpen] = useState(false); // Removed as unused
     // Removed unused reportDialogOpen state
       // Removed unused reportDialogOpen state
@@ -83,7 +87,7 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
     if (labTitle.includes('Titration')) {
       return <AcidBaseTitrationSimulation onMeasurementsUpdate={handleAddMeasurement} />;
     } else if (labTitle.includes('Salt')) {
-      return <SaltAnalysisSimulation onMeasurementsUpdate={handleAddMeasurement} />;
+      return <SaltAnalysisSimulation onMeasurementsUpdate={handleAddMeasurement} registerField={registerField} />;
     } else if (labTitle.includes('Redox')) {
       return <RedoxTitrationSimulation onMeasurementsUpdate={handleAddMeasurement} />;
     }
@@ -322,8 +326,12 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
                 multiline
                 rows={4}
                 value={simulationState.observations}
+                onFocus={registerField(
+                  () => simulationState.observations,
+                  (val: string) => setSimulationState((prev) => ({ ...prev, observations: val }))
+                )}
                 onChange={(e) =>
-                  setSimulationState({ ...simulationState, observations: e.target.value })
+                  setSimulationState((prev) => ({ ...prev, observations: e.target.value }))
                 }
                 fullWidth
                 inputProps={{
@@ -348,8 +356,12 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
                 multiline
                 rows={2}
                 value={simulationState.notes}
+                onFocus={registerField(
+                  () => simulationState.notes,
+                  (val: string) => setSimulationState((prev) => ({ ...prev, notes: val }))
+                )}
                 onChange={(e) =>
-                  setSimulationState({ ...simulationState, notes: e.target.value })
+                  setSimulationState((prev) => ({ ...prev, notes: e.target.value }))
                 }
                 fullWidth
                 inputProps={{
@@ -423,18 +435,413 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
 
 // Chemistry Simulations
 
-const SaltAnalysisSimulation: React.FC<{ onMeasurementsUpdate: (m: Measurement) => void }> = ({
+const SaltAnalysisSimulation: React.FC<{
+  onMeasurementsUpdate: (m: Measurement) => void;
+  registerField: (get: () => string, set: (val: string) => void) => (e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+}> = ({
   onMeasurementsUpdate,
+  registerField,
 }) => {
-  const [selectedSalt, setSelectedSalt] = useState<string>('');
+  // Mode: 'practice' or 'exam' (default to practice)
+  const [mode] = useState<'practice' | 'exam'>('practice');
+  
+  // Unknown sample selection (A, B, or C)
+  const [selectedSample, setSelectedSample] = useState<string>('');
+  
+  // Current test tube state
+  const [testTubeContent, setTestTubeContent] = useState<string>('empty'); // empty, unknown, mixed
+  const [testTubeColor, setTestTubeColor] = useState<string>('#e0e0e0'); // Visual color of test tube content
+  const [hasPrecipitate, setHasPrecipitate] = useState<boolean>(false);
+  const [precipitateColor, setPrecipitateColor] = useState<string>('');
+  const [isHeated, setIsHeated] = useState<boolean>(false);
+  const [reagentAdded, setReagentAdded] = useState<string>('');
+  const [activeReagent, setActiveReagent] = useState<string>(''); // Track which reagent is being tested
+  
+  // Observation table data
+  const [observations, setObservations] = useState<Record<string, string>>({});
+  
+  // Inference (student input)
+  const [inferredCation, setInferredCation] = useState<string>('');
+  const [inferredAnion, setInferredAnion] = useState<string>('');
+  
+  // Feedback state
+  const [feedback, setFeedback] = useState<string>(''); // Feedback state
+  const [showFeedback, setShowFeedback] = useState<boolean>(false); // Show feedback state
+  const [showHintGuide, setShowHintGuide] = useState<boolean>(true); // Hint guide visibility
 
-  const reactions: Record<string, string> = {
-    FeSO4: '🔴 Light green ppt → Reddish-brown ppt (oxidation)',
-    CuSO4: '🔵 Blue ppt (Cu(OH)₂) with NaOH | Deep blue complex with NH₃',
-    BaCl2: '⚪ White ppt with H₂SO₄ (BaSO₄) | White ppt with AgNO₃ (AgCl)',
-    AgNO3: '🟤 Dark brown Ag₂O with NaOH | White ppt with HCl',
+  // Unknown sample compositions (hidden from student)
+  const unknownSamples: Record<string, { cation: string; anion: string; cationHtml: string; anionHtml: string }> = {
+    A: { cation: 'Fe³⁺', anion: 'SO₄²⁻', cationHtml: 'Fe<sup>3</sup><sup>+</sup>', anionHtml: 'SO<sub>4</sub><sup>2</sup><sup>-</sup>' }, // Fe₂(SO₄)₃
+    B: { cation: 'Cu²⁺', anion: 'Cl⁻', cationHtml: 'Cu<sup>2</sup><sup>+</sup>', anionHtml: 'Cl<sup>-</sup>' },   // CuCl₂
+    C: { cation: 'Ba²⁺', anion: 'CO₃²⁻', cationHtml: 'Ba<sup>2</sup><sup>+</sup>', anionHtml: 'CO<sub>3</sub><sup>2</sup><sup>-</sup>' }, // BaCO₃
   };
-
+  
+  // Available reagents
+  const reagents = [
+    { id: 'NaOH', name: 'Sodium Hydroxide (NaOH)', color: '#f0f0f0' },
+    { id: 'NH3', name: 'Aqueous Ammonia (NH₃)', color: '#e3f2fd' },
+    { id: 'BaCl2', name: 'Barium Chloride (BaCl₂)', color: '#fff3e0' },
+    { id: 'AgNO3', name: 'Silver Nitrate (AgNO₃)', color: '#fce4ec' },
+    { id: 'HCl', name: 'Dilute Hydrochloric Acid (HCl)', color: '#fff9c4' },
+    { id: 'HNO3', name: 'Dilute Nitric Acid (HNO₃)', color: '#fffde7' },
+  ];
+  
+  // Reaction logic based on sample composition and reagent
+  const getReaction = (sampleId: string, reagentId: string, heated: boolean): {
+    color: string;
+    precipitate: boolean;
+    precipitateColor: string;
+    observation: string;
+    gas?: string;
+  } => {
+    if (!sampleId) {
+      return { color: '#e0e0e0', precipitate: false, precipitateColor: '', observation: 'No sample selected' };
+    }
+    
+    const sample = unknownSamples[sampleId];
+    if (!sample) {
+      return { color: '#e0e0e0', precipitate: false, precipitateColor: '', observation: 'Unknown sample' };
+    }
+    
+    const { cation, anion } = sample;
+    
+    // NaOH reactions (Cation tests)
+    if (reagentId === 'NaOH') {
+      if (cation === 'Fe³⁺') {
+        return {
+          color: '#8b4513',
+          precipitate: true,
+          precipitateColor: 'reddish-brown',
+          observation: 'Reddish-brown precipitate formed, insoluble in excess NaOH',
+        };
+      } else if (cation === 'Cu²⁺') {
+        return {
+          color: '#4169e1',
+          precipitate: true,
+          precipitateColor: 'blue',
+          observation: 'Blue precipitate formed, insoluble in excess NaOH',
+        };
+      } else if (cation === 'Ba²⁺') {
+        return {
+          color: '#f5f5dc',
+          precipitate: true,
+          precipitateColor: 'white',
+          observation: 'White precipitate formed, soluble in excess NaOH',
+        };
+      }
+    }
+    
+    // NH₃ reactions (Cation tests)
+    if (reagentId === 'NH3') {
+      if (cation === 'Fe³⁺') {
+        return {
+          color: '#8b4513',
+          precipitate: true,
+          precipitateColor: 'reddish-brown',
+          observation: 'Reddish-brown precipitate formed, insoluble in excess NH₃',
+        };
+      } else if (cation === 'Cu²⁺') {
+        return {
+          color: '#1e90ff',
+          precipitate: true,
+          precipitateColor: 'blue',
+          observation: 'Blue precipitate formed initially, dissolves to give deep blue solution in excess NH₃',
+        };
+      } else if (cation === 'Ba²⁺') {
+        return {
+          color: '#e0e0e0',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'No precipitate formed',
+        };
+      }
+    }
+    
+    // BaCl₂ reactions (Anion tests)
+    if (reagentId === 'BaCl2') {
+      if (anion === 'SO₄²⁻') {
+        return {
+          color: '#f5f5dc',
+          precipitate: true,
+          precipitateColor: 'white',
+          observation: 'White precipitate (BaSO₄) formed, insoluble in dilute acids',
+        };
+      } else if (anion === 'CO₃²⁻') {
+        const gas = heated ? 'CO₂ gas evolved (turns limewater milky)' : 'Effervescence, CO₂ gas evolved on heating';
+        return {
+          color: '#fffacd',
+          precipitate: true,
+          precipitateColor: 'white',
+          observation: `White precipitate formed, dissolves with effervescence. ${gas}`,
+          gas: 'CO₂',
+        };
+      } else if (anion === 'Cl⁻') {
+        return {
+          color: '#e0e0e0',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'No precipitate formed',
+        };
+      }
+    }
+    
+    // AgNO₃ reactions (Anion tests)
+    if (reagentId === 'AgNO3') {
+      if (anion === 'Cl⁻') {
+        return {
+          color: '#f5f5dc',
+          precipitate: true,
+          precipitateColor: 'white',
+          observation: 'White precipitate (AgCl) formed, soluble in NH₃(aq)',
+        };
+      } else if (anion === 'SO₄²⁻') {
+        return {
+          color: '#e0e0e0',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'No precipitate formed',
+        };
+      } else if (anion === 'CO₃²⁻') {
+        const gas = heated ? 'CO₂ gas evolved' : 'Effervescence on addition';
+        return {
+          color: '#fffacd',
+          precipitate: true,
+          precipitateColor: 'cream',
+          observation: `Cream precipitate formed, dissolves with effervescence. ${gas}`,
+          gas: 'CO₂',
+        };
+      }
+    }
+    
+    // HCl reactions (Anion tests - for CO₃²⁻)
+    if (reagentId === 'HCl') {
+      if (anion === 'CO₃²⁻') {
+        return {
+          color: '#fffacd',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'Effervescence, CO₂ gas evolved (turns limewater milky)',
+          gas: 'CO₂',
+        };
+      } else if (anion === 'SO₄²⁻' || anion === 'Cl⁻') {
+        return {
+          color: '#e0e0e0',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'No reaction',
+        };
+      }
+    }
+    
+    // HNO₃ reactions
+    if (reagentId === 'HNO3') {
+      if (anion === 'CO₃²⁻') {
+        return {
+          color: '#fffacd',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'Effervescence, CO₂ gas evolved',
+          gas: 'CO₂',
+        };
+      } else {
+        return {
+          color: '#e0e0e0',
+          precipitate: false,
+          precipitateColor: '',
+          observation: 'No reaction',
+        };
+      }
+    }
+    
+    return { color: '#e0e0e0', precipitate: false, precipitateColor: '', observation: 'No significant reaction observed' };
+  };
+  
+  // Handle sample selection
+  const handleSelectSample = (sampleId: string) => {
+    setSelectedSample(sampleId);
+    setTestTubeContent('unknown');
+    setTestTubeColor('#e0e0e0');
+    setHasPrecipitate(false);
+    setPrecipitateColor('');
+    setIsHeated(false);
+    setReagentAdded('');
+    setObservations({});
+    setInferredCation('');
+    setInferredAnion('');
+    setFeedback('');
+    setShowFeedback(false);
+  };
+  
+  // Handle adding reagent
+  const handleAddReagent = (reagentId: string) => {
+    if (!selectedSample) {
+      setFeedback('Please select a sample first!');
+      setShowFeedback(true);
+      return;
+    }
+    
+    setActiveReagent(reagentId); // Track the currently selected reagent
+    const reaction = getReaction(selectedSample, reagentId, isHeated);
+    setReagentAdded(reagentId);
+    setTestTubeContent('mixed');
+    setTestTubeColor(reaction.color);
+    setHasPrecipitate(reaction.precipitate);
+    setPrecipitateColor(reaction.precipitateColor);
+    
+    // Store observation
+    const observationKey = `${reagentId}${isHeated ? '_heated' : ''}`;
+    setObservations(prev => ({
+      ...prev,
+      [observationKey]: reaction.observation,
+    }));
+    
+    // In practice mode, provide hints
+    if (mode === 'practice') {
+      const reagent = reagents.find(r => r.id === reagentId);
+      setFeedback(`Reagent added: ${reagent?.name}. ${reaction.observation}`);
+      setShowFeedback(true);
+    }
+    
+    onMeasurementsUpdate({
+      name: `Reaction: ${reagentId}`,
+      value: 1,
+      unit: 'observed',
+    });
+  };
+  
+  // Handle heating
+  const handleHeat = () => {
+    if (!selectedSample) {
+      setFeedback('Please select a sample first!');
+      setShowFeedback(true);
+      return;
+    }
+    
+    setIsHeated(true);
+    
+    // Recalculate reaction if reagent was already added
+    if (reagentAdded) {
+      const reaction = getReaction(selectedSample, reagentAdded, true);
+      setTestTubeColor(reaction.color);
+      setHasPrecipitate(reaction.precipitate);
+      setPrecipitateColor(reaction.precipitateColor);
+      
+      // Update observation for heated reaction
+      const observationKey = `${reagentAdded}_heated`;
+      setObservations(prev => ({
+        ...prev,
+        [observationKey]: reaction.observation,
+      }));
+      
+      if (mode === 'practice') {
+        setFeedback(`Sample heated. ${reaction.observation}`);
+        setShowFeedback(true);
+      }
+    } else {
+      if (mode === 'practice') {
+        setFeedback('Sample heated. Add a reagent to see reaction.');
+        setShowFeedback(true);
+      }
+    }
+  };
+  
+  // Handle inference submission
+  const handleSubmitInference = () => {
+    if (!selectedSample) {
+      setFeedback('Please select a sample first!');
+      setShowFeedback(true);
+      return;
+    }
+    
+    const correct = unknownSamples[selectedSample];
+    const correctCation = correct.cation;
+    const correctAnion = correct.anion;
+    
+    // Helper function to convert ASCII notation to Unicode
+    const asciiToUnicode = (text: string): string => {
+      if (!text) return text;
+      let result = text.trim();
+      
+      // Superscript patterns - match anything between ^ ^
+      result = result.replace(/\^([^^\n]+)\^/g, (match, content) => {
+        let converted = content;
+        // Convert digits
+        converted = converted.replace(/0/g, '⁰').replace(/1/g, '¹').replace(/2/g, '²')
+          .replace(/3/g, '³').replace(/4/g, '⁴').replace(/5/g, '⁵')
+          .replace(/6/g, '⁶').replace(/7/g, '⁷').replace(/8/g, '⁸').replace(/9/g, '⁹');
+        // Convert operators
+        converted = converted.replace(/\+/g, '⁺').replace(/-/g, '⁻');
+        return converted;
+      });
+      
+      // Subscript patterns - match anything between ~ ~
+      result = result.replace(/~([^~\n]+)~/g, (match, content) => {
+        let converted = content;
+        // Convert digits only for subscripts
+        converted = converted.replace(/0/g, '₀').replace(/1/g, '₁').replace(/2/g, '₂')
+          .replace(/3/g, '₃').replace(/4/g, '₄').replace(/5/g, '₅')
+          .replace(/6/g, '₆').replace(/7/g, '₇').replace(/8/g, '₈').replace(/9/g, '₉');
+        return converted;
+      });
+      
+      return result;
+    };
+    
+    // Convert inferred values from ASCII notation to Unicode for comparison
+    const normalizedInferredCation = asciiToUnicode(inferredCation);
+    const normalizedInferredAnion = asciiToUnicode(inferredAnion);
+    
+    let observationMarks = 0;
+    let inferenceMarks = 0;
+    
+    // Mark observations (max 2 marks): Give 2 marks if they recorded at least one observation
+    const hasObservations = Object.keys(observations).length > 0;
+    observationMarks = hasObservations ? 2 : 0;
+    
+    // Mark inferences (max 2 marks): 1 for each correct inference
+    if (normalizedInferredCation === correctCation) {
+      inferenceMarks += 1;
+    }
+    if (normalizedInferredAnion === correctAnion) {
+      inferenceMarks += 1;
+    }
+    
+    const totalMarks = observationMarks + inferenceMarks;
+    const maxMarks = 4;
+    
+    // Build feedback HTML with proper HTML-formatted cation/anion
+    let feedbackHtml = '<div style="padding: 10px; line-height: 1.6;">';
+    
+    if (mode === 'practice') {
+      feedbackHtml += '<div style="margin-bottom: 10px;"><strong>Results:</strong></div>';
+      feedbackHtml += '<div style="margin-bottom: 8px;">';
+      feedbackHtml += 'Cation: ' + normalizedInferredCation + ' vs ' + correctCation;
+      if (normalizedInferredCation === correctCation) {
+        feedbackHtml += ' ✓ Correct';
+      } else {
+        feedbackHtml += ' ✗ Incorrect. Expected: ' + correct.cationHtml;
+      }
+      feedbackHtml += '</div>';
+      
+      feedbackHtml += '<div style="margin-bottom: 15px;">';
+      feedbackHtml += 'Anion: ' + normalizedInferredAnion + ' vs ' + correctAnion;
+      if (normalizedInferredAnion === correctAnion) {
+        feedbackHtml += ' ✓ Correct';
+      } else {
+        feedbackHtml += ' ✗ Incorrect. Expected: ' + correct.anionHtml;
+      }
+      feedbackHtml += '</div>';
+    }
+    
+    feedbackHtml += `<div style="margin-bottom: 8px;">Marks: ${totalMarks}/${maxMarks}</div>`;
+    feedbackHtml += '<div style="margin-left: 10px; margin-bottom: 4px;">- Observations: ' + observationMarks + '/2</div>';
+    feedbackHtml += '<div style="margin-left: 10px;">- Inferences: ' + inferenceMarks + '/2</div>';
+    feedbackHtml += '</div>';
+    
+    setFeedback(feedbackHtml);
+    setShowFeedback(true);
+  };
+  
   return (
     <Box>
       {/* Instructions */}
@@ -443,45 +850,374 @@ const SaltAnalysisSimulation: React.FC<{ onMeasurementsUpdate: (m: Measurement) 
           📋 Instructions:
         </Typography>
         <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-          1. <strong>Click on each salt button</strong> (FeSO₄, CuSO₄, BaCl₂, AgNO₃) to analyze the unknown solution
+          1. <strong>Select an unknown sample</strong> (Sample A, B, or C)
         </Typography>
         <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-          2. <strong>Observe the reactions</strong> shown in the result box below to identify the cation and anion present
+          2. <strong>Add reagents dropwise</strong> to test tube and observe reactions
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+          3. <strong>Heat when necessary</strong> using the Bunsen burner
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
+          4. <strong>Record observations</strong> in the Observation Table (right column)
         </Typography>
         <Typography variant="body2" sx={{ color: '#000000' }}>
-          3. <strong>Record observations</strong> in the "Observations" field: note colors, precipitate formation, and solubility in reagents
+          5. <strong>Identify the cation and anion</strong> based on your observations
         </Typography>
+        {mode === 'practice' && (
+          <Typography variant="body2" sx={{ color: '#4caf50', mt: 1, fontWeight: 'bold' }}>
+            Practice Mode: Hints and immediate feedback available
+          </Typography>
+        )}
+        {mode === 'exam' && (
+          <Typography variant="body2" sx={{ color: '#f44336', mt: 1, fontWeight: 'bold' }}>
+            Mock Exam Mode: No hints. Submit once.
+          </Typography>
+        )}
       </Paper>
 
-      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
-        Select Salt to Analyze:
-      </Typography>
-      <Grid container spacing={1}>
-        {Object.keys(reactions).map((salt) => (
-          <Grid item xs={6} key={salt}>
-            <Button
-              variant={selectedSalt === salt ? 'contained' : 'outlined'}
-              color="primary"
-              onClick={() => {
-                setSelectedSalt(salt);
-                onMeasurementsUpdate({
-                  name: `${salt} Reaction`,
-                  value: 1,
-                  unit: 'observed',
-                });
-              }}
-              fullWidth
-            >
-              {salt}
-            </Button>
-          </Grid>
-        ))}
+      <Grid container spacing={3}>
+        {/* Left Column: Apparatus and Reagents */}
+        <Grid item xs={12} md={6}>
+          {/* Sample Selection */}
+          <Card sx={{ mb: 2 }}>
+            <CardHeader title="Unknown Samples" />
+            <CardContent>
+              <Grid container spacing={2}>
+                {['A', 'B', 'C'].map((sample) => (
+                  <Grid item xs={4} key={sample}>
+                    <Button
+                      variant={selectedSample === sample ? 'contained' : 'outlined'}
+                      color={selectedSample === sample ? 'primary' : 'inherit'}
+                      onClick={() => handleSelectSample(sample)}
+                      fullWidth
+                      sx={{ py: 2 }}
+                    >
+                      Sample {sample}
+                    </Button>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Virtual Test Tube */}
+          <Card sx={{ mb: 2 }}>
+            <CardHeader title="Test Tube" />
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: 200 }}>
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 180,
+                    border: '3px solid #333',
+                    borderTop: 'none',
+                    borderRadius: '0 0 10px 10px',
+                    backgroundColor: testTubeContent === 'empty' ? '#f5f5f5' : testTubeColor,
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {hasPrecipitate && (
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: '30%',
+                        backgroundColor: precipitateColor === 'reddish-brown' ? '#8b4513' :
+                                       precipitateColor === 'blue' ? '#4169e1' :
+                                       precipitateColor === 'white' ? '#f5f5dc' :
+                                       precipitateColor === 'cream' ? '#fffacd' : '#ccc',
+                        borderBottom: '1px solid #666',
+                        borderRadius: '0 0 8px 8px',
+                      }}
+                    />
+                  )}
+                  {reagentAdded && (
+                    <Typography variant="caption" sx={{ position: 'absolute', top: -25, color: '#000' }}>
+                      + {reagents.find(r => r.id === reagentAdded)?.name.split(' ')[0]}
+                    </Typography>
+                  )}
+                  {isHeated && (
+                    <Typography variant="caption" sx={{ position: 'absolute', top: -40, color: '#f44336' }}>
+                      🔥 Heated
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+              <Typography variant="body2" sx={{ textAlign: 'center', mt: 2, color: '#000' }}>
+                {selectedSample ? `Sample ${selectedSample} selected` : 'No sample selected'}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          {/* Apparatus Controls */}
+          <Card sx={{ mb: 2 }}>
+            <CardHeader title="Apparatus" />
+            <CardContent>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    onClick={handleHeat}
+                    disabled={!selectedSample}
+                    fullWidth
+                    sx={{ py: 1.5 }}
+                  >
+                    🔥 Heat with Bunsen Burner
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setTestTubeContent('empty');
+                      setTestTubeColor('#e0e0e0');
+                      setHasPrecipitate(false);
+                      setReagentAdded('');
+                      setIsHeated(false);
+                      setObservations({});
+                    }}
+                    fullWidth
+                    sx={{ py: 1.5 }}
+                  >
+                    🧪 Clear Test Tube
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Reagents */}
+          <Card>
+            <CardHeader title="Reagents" />
+            <CardContent>
+              <Grid container spacing={1}>
+                {reagents.map((reagent) => (
+                  <Grid item xs={6} key={reagent.id}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleAddReagent(reagent.id)}
+                      disabled={!selectedSample}
+                      fullWidth
+                      sx={{
+                        backgroundColor: reagent.color,
+                        color: '#111 !important', // force readable text when enabled
+                        '&:hover': { backgroundColor: reagent.color, opacity: 0.8 },
+                        '&.Mui-disabled': {
+                          color: '#222 !important',
+                          backgroundColor: reagent.color,
+                          borderColor: '#888',
+                          opacity: 0.6,
+                        },
+                        fontWeight: 700,
+                        border: '1.5px solid #888',
+                        boxShadow: 1,
+                      }}
+                    >
+                      {reagent.name.split(' ')[0]}
+                    </Button>
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Right Column: Observations and Inferences */}
+        <Grid item xs={12} md={6}>
+          {/* Observation Table */}
+          <Card sx={{ mb: 2 }}>
+            <CardHeader title="Observation Table" />
+            <CardContent>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  Reagent + Test
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: '#666' }}>
+                  Record your observations for each test (unheated and heated)
+                </Typography>
+                {!activeReagent ? (
+                  <Typography variant="body2" sx={{ color: '#999', fontStyle: 'italic' }}>
+                    Select a reagent above to start testing
+                  </Typography>
+                ) : (
+                  reagents.filter(r => r.id === activeReagent).flatMap((reagent) => [reagent.id, `${reagent.id}_heated`]).map((key) => {
+                    const [reagentId, heated] = key.split('_');
+                    const reagent = reagents.find(r => r.id === reagentId);
+                    const value = observations[key] || '';
+                    return (
+                      <Box key={key} sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                          {reagent?.name} {heated === 'heated' ? '(Heated)' : '(Room Temp)'}
+                        </Typography>
+                        <TextField
+                          multiline
+                          rows={2}
+                          fullWidth
+                          value={value}
+                          onFocus={registerField(
+                            () => value,
+                            (val: string) => setObservations((prev) => ({ ...prev, [key]: val }))
+                          )}
+                          onChange={(e) => {
+                            setObservations(prev => ({ ...prev, [key]: e.target.value }));
+                          }}
+                          placeholder="Enter observation..."
+                          size="small"
+                          sx={{
+                          '& .MuiInputBase-input': { color: '#000' },
+                          backgroundColor: '#fff',
+                        }}
+                      />
+                    </Box>
+                    );
+                  })
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Practice Hint Guide */}
+          {mode === 'practice' && (
+            <Card sx={{ mb: 2 }}>
+              <CardHeader
+                title="Hint Guide (Practice Mode)"
+                action={
+                  <Button size="small" onClick={() => setShowHintGuide((v) => !v)}>
+                    {showHintGuide ? 'Hide' : 'Show'}
+                  </Button>
+                }
+              />
+              {showHintGuide && (
+                <CardContent>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Cation clues
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Fe<sup>3+</sup>: Reddish-brown ppt with NaOH/NH₃, insoluble in excess.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Cu<sup>2+</sup>: Blue ppt with NaOH; deep blue solution in excess NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 2 }}>
+                    • Ba<sup>2+</sup>: White ppt with NaOH (partly soluble); no ppt with NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Ca<sup>2+</sup>: White ppt with NaOH (slightly soluble), no ppt with NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Mg<sup>2+</sup>: White ppt with NaOH (insoluble in excess), no ppt with NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Zn<sup>2+</sup>: White ppt with NaOH/NH₃, soluble in excess (clear solution).
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Al<sup>3+</sup>: White gelatinous ppt with NaOH, soluble in excess; no ppt with NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Pb<sup>2+</sup>: White ppt with NaOH (soluble in excess, colorless solution); white ppt with NH₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 2 }}>
+                    • NH<sub>4</sub><sup>+</sup>: No ppt with NaOH/NH₃; on heating with NaOH, ammonia gas (pungent) evolves.
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Anion clues
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • SO₄<sup>2-</sup>: White ppt with BaCl₂, insoluble in dilute acids; no ppt with AgNO₃.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Cl<sup>-</sup>: White ppt with AgNO₃, soluble in NH₃; no ppt with BaCl₂.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000' }}>
+                    • CO₃<sup>2-</sup>: Effervescence with acids; white ppt with BaCl₂ that dissolves with effervescence on acid.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • Br<sup>-</sup>: Cream ppt with AgNO₃ (partly soluble in NH₃); no ppt with BaCl₂.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • I<sup>-</sup>: Yellow ppt with AgNO₃ (insoluble in NH₃); no ppt with BaCl₂.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+                    • NO₃<sup>-</sup>: No ppt with AgNO₃/BaCl₂; brown ring test (conc. H₂SO₄ + FeSO₄) gives brown ring.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#000' }}>
+                    • SO₃<sup>2-</sup>: Decolorizes acidified KMnO₄; with BaCl₂ gives white ppt soluble in dilute acids (SO₂ gas smell).
+                  </Typography>
+                </CardContent>
+              )}
+            </Card>
+          )}
+
+          {/* Inference Section */}
+          <Card sx={{ mb: 2 }}>
+            <CardHeader title="Inference" />
+            <CardContent>
+              <TextField
+                label="Cation Identified"
+                value={inferredCation}
+                onFocus={registerField(
+                  () => inferredCation,
+                  (val: string) => setInferredCation(val)
+                )}
+                onChange={(e) => setInferredCation(e.target.value)}
+                fullWidth
+                placeholder="e.g., Fe³⁺, Cu²⁺, Ba²⁺"
+                sx={{ mb: 2, '& .MuiInputBase-input': { color: '#000' } }}
+              />
+              <TextField
+                label="Anion Identified"
+                value={inferredAnion}
+                onFocus={registerField(
+                  () => inferredAnion,
+                  (val: string) => setInferredAnion(val)
+                )}
+                onChange={(e) => setInferredAnion(e.target.value)}
+                fullWidth
+                placeholder="e.g., SO₄²⁻, Cl⁻, CO₃²⁻"
+                sx={{ mb: 2, '& .MuiInputBase-input': { color: '#000' } }}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSubmitInference}
+                disabled={!selectedSample || !inferredCation || !inferredAnion}
+                fullWidth
+              >
+                Submit Inference
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Feedback */}
+          {showFeedback && (
+            <Card sx={{ mb: 2, backgroundColor: mode === 'practice' ? '#e8f5e9' : '#fff3e0' }}>
+              <CardHeader title="Feedback" />
+              <CardContent>
+                <Box
+                  dangerouslySetInnerHTML={{
+                    // Sanitize while allowing sup, sub, div, and style attributes for proper HTML rendering
+                    __html: DOMPurify.sanitize(feedback, { 
+                      ALLOWED_TAGS: ['div', 'br', 'sup', 'sub', 'strong'],
+                      ALLOWED_ATTR: ['style']
+                    }),
+                  }}
+                  sx={{ color: '#000' }}
+                />
+                <Button variant="outlined" size="small" onClick={() => setShowFeedback(false)} sx={{ mt: 2, color: '#000', borderColor: '#555', backgroundColor: '#fff', '&:hover': { backgroundColor: '#f0f0f0', borderColor: '#333' }, }}>
+                  Close
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
       </Grid>
-      {selectedSalt && (
-        <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1, color: '#000000' }}>
-          <Typography variant="body2" sx={{ color: '#000000' }}>{reactions[selectedSalt]}</Typography>
-        </Box>
-      )}
     </Box>
   );
 };

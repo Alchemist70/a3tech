@@ -23,13 +23,26 @@ const EnhancedMarkdown: React.FC<EnhancedMarkdownProps> = ({ children, isDark: i
   // Process markdown and HTML content using a line-based parser for lists
   const processContent = (content: string): string => {
     // Inline transforms applied to text nodes
+    // CRITICAL: This must properly handle both markdown syntax AND existing HTML tags
     const inlineTransform = (text: string) => {
       let r = text;
+      
+      // Replace markdown with HTML, being careful not to interfere with existing HTML tags
+      // Process strikethrough first (lowest precedence)
       r = r.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+      
+      // Process bold/italic (be careful with markdown patterns)
       r = r.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       r = r.replace(/\*([^*]+)\*/g, '<em>$1</em>');
       r = r.replace(/_([^_]+)_/g, '<em>$1</em>');
+      
+      // Process inline code
       r = r.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // IMPORTANT: HTML tags like <sup>, <sub>, <span>, <mark>, <u>, <del>, <big>, <small>,
+      // <b>, <i>, <a>, etc. that are already in the input text are preserved as-is through
+      // dangerouslySetInnerHTML. They don't need transformation.
+      
       return r;
     };
 
