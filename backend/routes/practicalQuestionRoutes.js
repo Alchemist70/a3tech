@@ -127,39 +127,9 @@ router.get('/titration', async (req, res) => {
 });
 
 /**
- * GET /api/practical-questions/:id
- * Get a specific question by question_id
- */
-router.get('/:id', async (req, res) => {
-  try {
-    const question = await PracticalQuestion.findOne({
-      question_id: req.params.id
-    }).lean();
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        error: 'Question not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: question
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Error retrieving question',
-      message: error.message
-    });
-  }
-});
-
-/**
  * GET /api/practical-questions/stats/summary
  * Get statistics about available questions
+ * MUST be before /:id route to avoid being caught as :id
  */
 router.get('/stats/summary', async (req, res) => {
   try {
@@ -204,6 +174,7 @@ router.get('/stats/summary', async (req, res) => {
 /**
  * GET /api/practical-questions/random/:count
  * Get random questions (for practice)
+ * MUST be before /:id route to avoid being caught as :id
  */
 router.get('/random/:count', async (req, res) => {
   try {
@@ -229,6 +200,38 @@ router.get('/random/:count', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error retrieving random questions',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/practical-questions/:id
+ * Get a specific question by question_id
+ * MUST be last to avoid catching other routes
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const question = await PracticalQuestion.findOne({
+      question_id: req.params.id
+    }).lean();
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        error: 'Question not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: question
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error retrieving question',
       message: error.message
     });
   }

@@ -241,7 +241,7 @@ app.use((req, res, next) => {
         if (req.method === 'GET') {
             // For frequently-updated admin-managed endpoints (WAEC/JAMB sections, question bank and topics),
             // avoid client-side caching so changes made via admin UI appear immediately.
-            if (req.path.includes('/waec-sections') || req.path.includes('/jamb-sections') || req.path.includes('/waec-topics') || req.path.includes('/jamb-topics') || req.path.includes('/waec-topic-details') || req.path.includes('/jamb-topic-details') || req.path.includes('/question-bank') || req.path.includes('/mock-test')) {
+            if (req.path.includes('/waec-sections') || req.path.includes('/jamb-sections') || req.path.includes('/waec-topics') || req.path.includes('/jamb-topics') || req.path.includes('/waec-topic-details') || req.path.includes('/jamb-topic-details') || req.path.includes('/question-bank') || req.path.includes('/mock-test') || req.path.includes('/practical-questions') || req.path.includes('/grade-practical-questions')) {
                 res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
             } else if (req.path.includes('/projects') || req.path.includes('/blog') || req.path.includes('/topics') || req.path.includes('/knowledge-base')) {
                 // Admin-managed collections must reflect updates immediately — avoid client-side caching

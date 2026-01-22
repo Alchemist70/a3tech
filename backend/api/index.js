@@ -144,8 +144,8 @@ app.use((req, res, next) => {
         res.set('Cache-Control', 'public, max-age=600'); // 10 minutes
       } else if (req.path.includes('/user') || req.path.includes('/auth')) {
         res.set('Cache-Control', 'private, no-cache'); // Don't cache user-specific data
-      } else if (req.path.includes('/question-bank') || req.path.includes('/mock-test') || req.path.includes('/uploads')) {
-        // Question bank and mock-test endpoints are dynamic during admin operations; avoid caching
+      } else if (req.path.includes('/question-bank') || req.path.includes('/mock-test') || req.path.includes('/uploads') || req.path.includes('/practical-questions') || req.path.includes('/grade-practical-questions')) {
+        // Question bank, mock-test, and practical question endpoints are dynamic; avoid caching
         res.set('Cache-Control', 'private, no-cache');
       } else {
         res.set('Cache-Control', 'public, max-age=300'); // 5 minutes default
