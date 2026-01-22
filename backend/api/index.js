@@ -36,6 +36,8 @@ const visits = require('../routes/visits');
 const admin = require('../routes/admin');
 const goldMemberStatus = require('../routes/goldMemberStatus');
 const chatHistory = require('../routes/chatHistory');
+const practicalQuestions = require('../routes/practicalQuestionRoutes');
+const practicalQuestionGrading = require('../routes/practicalQuestionGradingRoutes');
 
 // Import passport configuration
 require('../config/passport-google');
@@ -249,6 +251,8 @@ try {
   app.use('/api/admin-tab-auth', require('../routes/adminTabAuth'));
   app.use('/api/gold-member-status', goldMemberStatus);
   app.use('/api/chat-history', chatHistory);
+  app.use('/api/practical-questions', practicalQuestions);
+  app.use('/api/grade-practical-questions', practicalQuestionGrading);
 } catch (routeErr) {
   console.error('Failed to load routes:', routeErr);
 }
