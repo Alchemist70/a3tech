@@ -359,6 +359,10 @@ app.use('/api/seb-templates', sebTemplateRoutes);
 // Labs practical endpoints
 app.use('/api/labs', labs_1.default);
 app.use('/api/lab-results', require('./routes/labResults'));
+// Practical questions endpoints (titration questions, etc.)
+app.use('/api/practical-questions', require('./routes/practicalQuestionRoutes'));
+// Practical question grading endpoints
+app.use('/api/grade-practical-questions', require('./routes/practicalQuestionGradingRoutes'));
 // Exam session endpoints (proctoring)
 app.use('/api/exam-sessions', require('./routes/examSessionRoutes'));
 // Health check endpoint

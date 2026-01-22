@@ -3,6 +3,7 @@ const Lab = require('../models/Lab');
 const { v4: uuidv4 } = require('uuid');
 const scoringService = require('../services/scoringService');
 const reportService = require('../services/reportService');
+const titrationService = require('../services/titrationService');
 
 // Create a new lab session
 exports.createLabSession = async (req, res) => {
@@ -253,6 +254,58 @@ exports.deleteLab = async (req, res) => {
   try {
     await LabResult.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Lab session deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Validate titration data
+exports.validateTitration = async (req, res) => {
+  try {
+    const { titreVolume, titrantConcentration, analyteVolume, analyteConcentration, expectedMolarity } = req.body;
+
+    // Validate inputs
+    if (!titreVolume || !titrantConcentration || !analyteVolume) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required titration parameters' 
+      });
+    }
+
+    // Validate titre
+    const titreValidation = titrationService.validateTitre(titreVolume);
+
+    // Calculate molarity
+    const molarityResult = titrationService.calculateMolarity(
+      titrantConcentration,
+      titreVolume,
+      analyteVolume,
+      1 // Standard 1:1 stoichiometry for HCl:NaOH
+    );
+
+    // Calculate percentage error if expected value provided
+    let percentError = null;
+    if (expectedMolarity) {
+      percentError = titrationService.calculatePercentageError(
+        molarityResult.molarity,
+        expectedMolarity
+      );
+    }
+
+    res.json({
+      success: true,
+      validation: titreValidation,
+      calculations: {
+        molarity: molarityResult.molarity,
+        moles: molarityResult.moles
+      },
+      percentError,
+      feedback: titrationService.generateTitrationFeedback(
+        molarityResult.molarity,
+        expectedMolarity || molarityResult.molarity,
+        titreVolume
+      )
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

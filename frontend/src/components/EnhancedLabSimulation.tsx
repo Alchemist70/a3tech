@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import DOMPurify from 'dompurify';
+import QuestionDisplay from './QuestionDisplay';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -75,12 +76,10 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
 
   const [newMeasurement, setNewMeasurement] = useState({ name: '', value: '', unit: '' });
   const [showDataInput, setShowDataInput] = useState(false);
-
-  // const [reportDialogOpen, setReportDialogOpen] = useState(false); // Removed as unused
-    // Removed unused reportDialogOpen state
-      // Removed unused reportDialogOpen state
-    // Removed unused reportDialogOpen state
-  // Removed unused reportDialogOpen state
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [showQuestion, setShowQuestion] = useState(labTitle.includes('Titration'));
 
   // Chemistry-specific simulations
   const renderChemistrySimulation = () => {
@@ -170,6 +169,16 @@ const EnhancedLabSimulation: React.FC<LabSimulationProps> = ({
 
   return (
     <Box sx={{ width: '100%', padding: 2 }}>
+      {/* Question Display Section - For Titration Labs */}
+      {labTitle.includes('Titration') && showQuestion && (
+        <Box sx={{ mb: 3 }}>
+          <QuestionDisplay 
+            labMode="practice"
+            onQuestionLoaded={(question) => setCurrentQuestion(question)}
+          />
+        </Box>
+      )}
+
       <Grid container spacing={3}>
         {/* Simulation Area */}
         <Grid item xs={12} md={6}>
@@ -1222,97 +1231,1324 @@ const SaltAnalysisSimulation: React.FC<{
   );
 };
 
-const AcidBaseTitrationSimulation: React.FC<{ onMeasurementsUpdate: (m: Measurement) => void }> = ({
+const AcidBaseTitrationSimulation: React.FC<{ 
+  onMeasurementsUpdate: (m: Measurement) => void;
+  mode?: 'practice' | 'exam';
+}> = ({
   onMeasurementsUpdate,
+  mode = 'practice',
 }) => {
-  const [burette, setBurette] = useState(0);
-  const [color, setColor] = useState('Light Red');
+  // ============ MODE SETTINGS ============
+  const isPracticeMode = mode === 'practice';
+  const isExamMode = mode === 'exam';
+  
+  // ============ SETUP PHASE ============
+  const [setupPhase, setSetupPhase] = useState<'apparatus' | 'solutions' | 'indicator' | 'titration'>('apparatus');
+  const [buretteRinsed, setBuretteRinsed] = useState(false);
+  const [pipetteRinsed, setPipetteRinsed] = useState(false);
+  const [buretteFilled, setBuretteFilled] = useState(false);
+  const [pipetteUsed, setPipetteUsed] = useState(false);
+  
+  // ============ AVAILABLE ACIDS AND BASES ============
+  const availableAcids = [
+    { name: 'HCl (Hydrochloric Acid)', symbol: 'HCl', defaultConc: 0.1 },
+    { name: 'H₂SO₄ (Sulfuric Acid)', symbol: 'H₂SO₄', defaultConc: 0.1 },
+    { name: 'CH₃COOH (Acetic Acid)', symbol: 'CH₃COOH', defaultConc: 0.1 },
+    { name: 'HNO₃ (Nitric Acid)', symbol: 'HNO₃', defaultConc: 0.1 },
+  ];
+  
+  const availableBases = [
+    { name: 'NaOH (Sodium Hydroxide)', symbol: 'NaOH', defaultConc: 0.05 },
+    { name: 'KOH (Potassium Hydroxide)', symbol: 'KOH', defaultConc: 0.05 },
+    { name: 'NH₃ (Ammonia)', symbol: 'NH₃', defaultConc: 0.05 },
+    { name: 'Na₂CO₃ (Sodium Carbonate)', symbol: 'Na₂CO₃', defaultConc: 0.05 },
+  ];
+  
+  // ============ SOLUTIONS ============
+  const [selectedAcid, setSelectedAcid] = useState(availableAcids[0]);
+  const [selectedBase, setSelectedBase] = useState(availableBases[0]);
+  const [customAcidConc, setCustomAcidConc] = useState<string>('0.1');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [customBaseConc, setCustomBaseConc] = useState<string>('0.05');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [solutionsConfirmed, setSolutionsConfirmed] = useState(false);
+  
+  const [selectedIndicator, setSelectedIndicator] = useState<'methyl-orange' | 'phenolphthalein' | null>(null);
+  const [titrant, setTitrant] = useState({ name: selectedAcid.symbol, concentration: parseFloat(customAcidConc), volume: 0 });
+  const [analyte, setAnalyte] = useState({ name: selectedBase.symbol, concentration: parseFloat(customBaseConc), volume: 25 });
+  
+  // ============ MENISCUS READING ============
+  const [initialReading, setInitialReading] = useState<number | null>(null);
+  const [finalReading, setFinalReading] = useState<number | null>(null);
+  const [buretteVolume, setBuretteVolume] = useState(0);
+  const [showZoom, setShowZoom] = useState(false);
+  
+  // ============ TITRATION PROGRESS ============
+  const [flaskColor, setFlaskColor] = useState('Colorless');
+  const [endpointReached, setEndpointReached] = useState(false);
+  const [overTitrated, setOverTitrated] = useState(false);
+  const [titrationAttempts, setTitrationAttempts] = useState(0);
+  
+  // ============ CALCULATIONS ============
+  const [userCalculations, setUserCalculations] = useState({
+    titreVolume: '',
+    molarity: '',
+    workingDetails: ''
+  });
+  const [submissionFeedback, setSubmissionFeedback] = useState<{
+    isValid: boolean;
+    message: string;
+    percentError?: number;
+    grade?: string;
+    score?: number;
+    molarityScore?: number;
+    stepsScore?: number;
+    stepsIssues?: string[];
+    combinedScore?: number;
+    correctWorkingSteps?: string;
+    correctC2?: number;
+  } | null>(null);
+  const [calculationsSubmitted, setCalculationsSubmitted] = useState(false);
+
+  // ============ HANDLER FUNCTIONS ============
+  
+  const handleRinseBurette = () => {
+    if (!buretteRinsed) {
+      setBuretteRinsed(true);
+    }
+  };
+
+  const handleConfirmSolutions = () => {
+    // Update titrant and analyte with selected values
+    const acidConc = parseFloat(customAcidConc) || selectedAcid.defaultConc;
+    const baseConc = parseFloat(customBaseConc) || selectedBase.defaultConc;
+    
+    setTitrant({ 
+      name: selectedAcid.symbol, 
+      concentration: acidConc, 
+      volume: 0 
+    });
+    
+    setAnalyte({ 
+      name: selectedBase.symbol, 
+      concentration: baseConc, 
+      volume: 25 
+    });
+    
+    setSolutionsConfirmed(true);
+    setSetupPhase('indicator'); // Move to indicator selection phase
+  };
+
+  const handleRinsePipette = () => {
+    if (!pipetteRinsed) {
+      setPipetteRinsed(true);
+    }
+  };
+
+  const handleFillBurette = () => {
+    if (buretteRinsed) {
+      setBuretteFilled(true);
+      setInitialReading(0.0); // Start from 0 mL
+    }
+  };
+
+  const handleUsePipette = () => {
+    if (pipetteRinsed && buretteFilled) {
+      setPipetteUsed(true);
+      // Don't advance phase - wait for user to click "Select Solutions" button
+    }
+  };
+
+  const handleSelectIndicator = (indicator: 'methyl-orange' | 'phenolphthalein') => {
+    setSelectedIndicator(indicator);
+    // Don't auto-transition - let the "Indicator Selected" button handle it
+  };
 
   const handleBuretteChange = (value: number) => {
-    setBurette(value);
+    setBuretteVolume(value);
 
-    if (value < 10) {
-      setColor('Light Red');
-    } else if (value < 15) {
-      setColor('Medium Red');
-    } else if (value < 20) {
-      setColor('Pale Pink');
+    // Calculate color based on moles of titrant added
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const molesOfTitrant = (value / 1000) * titrant.concentration;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const molesOfAnalyte = (analyte.volume / 1000) * analyte.concentration;
+    const equivalencePoint = (analyte.concentration * analyte.volume) / titrant.concentration;
+
+    // Correct endpoint: methyl orange changes at pH 3.1-4.4
+    // For strong acid-strong base with HCl and NaOH
+    const correctEndpoint = equivalencePoint; // Should be around 12.5 mL for 0.05M HCl vs 0.1M NaOH
+
+    if (value < correctEndpoint - 0.5) {
+      if (selectedIndicator === 'methyl-orange') {
+        setFlaskColor('Red');
+      } else {
+        setFlaskColor('Colorless');
+      }
+      setEndpointReached(false);
+      setOverTitrated(false);
+    } else if (value >= correctEndpoint - 0.5 && value <= correctEndpoint + 0.5) {
+      if (selectedIndicator === 'methyl-orange') {
+        setFlaskColor('Orange (ENDPOINT!)');
+      } else {
+        setFlaskColor('Pale Pink (ENDPOINT!)');
+      }
+      setEndpointReached(true);
+      setOverTitrated(false);
     } else {
-      setColor('Colorless + Pink (ENDPOINT!)');
+      if (selectedIndicator === 'methyl-orange') {
+        setFlaskColor('Yellow (OVER-TITRATED!)');
+      } else {
+        setFlaskColor('Pink (OVER-TITRATED!)');
+      }
+      setEndpointReached(false);
+      setOverTitrated(true);
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleRecordInitialReading = () => {
+    if (buretteFilled && initialReading === null) {
+      setInitialReading(0.0);
+    }
+  };
+
+  const handleRecordFinalReading = () => {
+    if (endpointReached && initialReading !== null && finalReading === null) {
+      // Validate final reading is greater than initial reading
+      if (buretteVolume <= initialReading) {
+        setSubmissionFeedback({
+          isValid: false,
+          message: '❌ Final reading must be greater than initial reading. This is physically impossible.'
+        });
+        return;
+      }
+      
+      setFinalReading(buretteVolume);
+      const titre = buretteVolume - (initialReading || 0);
+      
+      // Validate titre is in realistic range
+      if (titre < 0.5) {
+        setSubmissionFeedback({
+          isValid: false,
+          message: '❌ Titre volume is too small (< 0.5 mL). Check your readings.'
+        });
+        return;
+      }
+      
+      if (titre > 50) {
+        setSubmissionFeedback({
+          isValid: false,
+          message: '❌ Titre volume exceeds burette capacity. Invalid result.'
+        });
+        return;
+      }
+      
       onMeasurementsUpdate({
-        name: 'Burette Volume',
-        value: value,
+        name: 'Titre Volume',
+        value: titre,
         unit: 'mL',
       });
     }
   };
 
-  const colorMap: Record<string, string> = {
-    'Light Red': '#ffcccc',
-    'Medium Red': '#ff9999',
-    'Pale Pink': '#ffdddd',
-    'Colorless + Pink (ENDPOINT!)': '#ffffff',
+  const handleSubmitCalculations = () => {
+    // ============ EXAM MODE CHECK ============
+    if (isExamMode && calculationsSubmitted) {
+      setSubmissionFeedback({
+        isValid: false,
+        message: '❌ EXAM MODE: You have already submitted your calculations. No further submissions are allowed.'
+      });
+      return;
+    }
+
+    // ============ VALIDATION ============
+    const titre = (finalReading || 0) - (initialReading || 0);
+    const molarityInput = parseFloat(userCalculations.molarity);
+    const workingDetails = userCalculations.workingDetails.trim();
+
+    // Check if all required fields are filled
+    if (!userCalculations.molarity || !workingDetails) {
+      setSubmissionFeedback({
+        isValid: false,
+        message: '❌ Please enter both your working details and calculated molarity value'
+      });
+      return;
+    }
+
+    if (isNaN(molarityInput) || molarityInput <= 0) {
+      setSubmissionFeedback({
+        isValid: false,
+        message: '❌ Molarity must be a valid positive number'
+      });
+      return;
+    }
+
+    // ============ CALCULATION & FEEDBACK ============
+    // First, calculate what the expected molarity SHOULD BE based on actual experiment values
+    // C₁V₁ = C₂V₂
+    // C₁ = titrant concentration (known - from user selection)
+    // V₁ = pipette volume (25 mL)
+    // C₂ = unknown concentration (what we solve for)
+    // V₂ = titre (burette reading difference)
+    const pipetteVolume = 25; // Standard pipette volume (mL)
+    const expectedMolarity = (titrant.concentration * pipetteVolume) / titre; // Calculated C₂
+    const percentError = Math.abs((molarityInput - expectedMolarity) / expectedMolarity) * 100;
+    
+    // ============ GRADE CALCULATION STEPS ============
+    // Check if working details contain evidence of proper calculation methodology
+    const workingDetailsLower = workingDetails.toLowerCase();
+    let stepsScore = 0;
+    let stepsMaxScore = 100;
+    const stepsIssues = [];
+    
+    // Check for formula (C₁V₁ = C₂V₂ or dilution formula) - flexible matching
+    // Look for: C and V variables with equals sign - simple and direct
+    const hasFormula = /[cv]/i.test(workingDetailsLower) && 
+                       /=/.test(workingDetails) && 
+                       /[cv].*[cv]/i.test(workingDetailsLower);
+    
+    if (hasFormula) {
+      stepsScore += 30;
+    } else {
+      stepsIssues.push('Missing formula/equation');
+    }
+    
+    // Check for value substitution (numbers should be present)
+    const hasNumbers = /\d+\.?\d*/.test(workingDetails);
+    if (hasNumbers) {
+      stepsScore += 20;
+    } else {
+      stepsIssues.push('No numerical values shown');
+    }
+    
+    // Check for units in calculations (M for molarity, mL for volume) - ENHANCED SCORING
+    let unitsScore = 0;
+    
+    // For titration, check for key units: M (molarity) and mL (volume)
+    const hasM = /\bm\b|molar|concentration/i.test(workingDetailsLower);
+    const hasML = /ml|volume/i.test(workingDetailsLower);
+    const hasMol = /\bmol\b/i.test(workingDetailsLower);
+    
+    // Award points based on which key units are present
+    if ((hasM && hasML) || (hasM && hasMol) || (hasML && hasMol)) {
+      unitsScore = 25; // Full credit for having at least 2 key unit types
+    } else if (hasM || hasML || hasMol) {
+      unitsScore = 18; // Partial credit for having some units
+    } else if (/m|acid|base/i.test(workingDetailsLower)) {
+      unitsScore = 8; // Minimal credit for mentioning relevant terms
+      stepsIssues.push('Incomplete units - need more specific measurements');
+    } else {
+      stepsIssues.push('Missing units or solution names');
+    }
+    
+    stepsScore += unitsScore;
+    
+    // Generate CORRECT working steps based on ACTUAL EXPERIMENT VALUES (not user's input)
+    // C₁V₁ = C₂V₂
+    // C₁ = titrant concentration (known - selected acid)
+    // V₁ = volume of pipette (known - 25 mL)
+    // C₂ = unknown concentration (what we solve for)
+    // V₂ = volume of titrant from burette (titre)
+    const correctConcentration = titrant.concentration;
+    const correctPipetteVolume = pipetteVolume; // Always 25 mL
+    const correctTitreVolume = titre;
+    const correctUnknownMolarity = expectedMolarity; // Use calculated value
+    
+    const correctWorkingSteps = `C₁V₁ = C₂V₂
+${correctConcentration} M × ${correctPipetteVolume} mL = C₂ × ${correctTitreVolume} mL
+C₂ = (${correctConcentration} M × ${correctPipetteVolume} mL) / ${correctTitreVolume} mL
+C₂ = ${correctUnknownMolarity.toFixed(4)} M`;
+    
+    // ============ VALIDATE C₂ VALUES AND UNITS ============
+    // Extract C₂ value from last line of working details
+    const workingLines = workingDetails.split('\n').filter(line => line.trim().length > 0);
+    const lastLine = workingLines[workingLines.length - 1] || '';
+    
+    // Extract C₂ value and check for unit (M)
+    const c2Pattern = /c[₂2]\s*=\s*([\d.]+)\s*([a-z])?/i;
+    const c2Match = lastLine.match(c2Pattern);
+    const c2FromWorking = c2Match ? parseFloat(c2Match[1]) : null;
+    const c2HasUnit = c2Match && c2Match[2] ? /^m$/i.test(c2Match[2]) : /\bM\b/.test(lastLine);
+    
+    // Check if "Calculated Molarity of Unknown (M)" field has unit (M)
+    const molarityFieldHasUnit = /M$/.test(userCalculations.molarity.trim()) || /^[\d.]+\s+M$/.test(userCalculations.molarity.trim());
+    
+    // Extract numeric value from molarity field (remove 'M' if present)
+    const molarityFieldValue = parseFloat(userCalculations.molarity.replace(/\s*M\s*/i, ''));
+    
+    let c2ValidationIssues: string[] = [];
+    
+    // Check if C₂ value in working details matches the correct value
+    if (c2FromWorking !== null) {
+      // Allow for small rounding differences (tolerance of 0.0001)
+      const tolerance = 0.0001;
+      if (Math.abs(c2FromWorking - correctUnknownMolarity) > tolerance) {
+        c2ValidationIssues.push(`C₂ value in working (${c2FromWorking.toFixed(4)} M) doesn't match correct value (${correctUnknownMolarity.toFixed(4)} M)`);
+      }
+    }
+    
+    // Check if working details has unit for C₂
+    if (!c2HasUnit) {
+      c2ValidationIssues.push('Missing unit (M) for C₂ in working details');
+    }
+    
+    // Check if calculated molarity field has unit
+    if (!molarityFieldHasUnit) {
+      c2ValidationIssues.push('Missing unit (M) in Calculated Molarity field');
+    }
+    
+    // Check if calculated molarity value matches correct value
+    if (!isNaN(molarityFieldValue)) {
+      const tolerance = 0.0001;
+      if (Math.abs(molarityFieldValue - correctUnknownMolarity) > tolerance) {
+        c2ValidationIssues.push(`Calculated Molarity (${molarityFieldValue.toFixed(4)} M) doesn't match correct value (${correctUnknownMolarity.toFixed(4)} M)`);
+      }
+    }
+    
+    // If there are C₂ or unit validation issues, deduct from steps score
+    if (c2ValidationIssues.length > 0) {
+      // Only deduct if stepsScore would still be positive, to allow perfect scores when everything is correct
+      const deduction = Math.min(40, stepsScore); // Deduct up to 40, but don't go below 0
+      stepsScore = Math.max(0, stepsScore - deduction);
+      c2ValidationIssues.forEach(issue => stepsIssues.push(issue));
+    }
+    
+    // Check for logical flow (contains words like "therefore", "so", "then", "=", operators)
+
+    const hasLogicalFlow = /therefore|hence|thus|so|then|=|divide|multiply|subtract|add|final|answer|result/i.test(workingDetailsLower);
+    if (hasLogicalFlow) {
+      stepsScore += 15;
+    } else {
+      stepsIssues.push('Steps lack logical connection');
+    }
+    
+    // Check for minimum length (should show real working, not just a few words)
+    if (workingDetails.length >= 50) {
+      stepsScore += 10;
+    } else {
+      stepsIssues.push('Working details too brief');
+    }
+    
+    // Ensure steps score doesn't exceed max
+    stepsScore = Math.min(stepsScore, stepsMaxScore);
+    
+    // ============ COMBINE SCORES: MOLARITY (60%) + STEPS (40%) ============
+    // Molarity score based on accuracy
+    let molarityScore = 0;
+    
+    if (percentError <= 5) {
+      molarityScore = 100;
+    } else if (percentError <= 10) {
+      molarityScore = 85;
+    } else if (percentError <= 15) {
+      molarityScore = 70;
+    } else if (percentError <= 20) {
+      molarityScore = 55;
+    } else {
+      molarityScore = 30;
+    }
+    
+    // Calculate combined score: 60% molarity + 40% steps
+    const combinedScore = Math.round((molarityScore * 0.6) + (stepsScore * 0.4));
+    
+    // Determine overall grade
+    let score = combinedScore;
+    let grade = '';
+    
+    if (combinedScore >= 85) {
+      grade = 'A';
+    } else if (combinedScore >= 75) {
+      grade = 'B';
+    } else if (combinedScore >= 65) {
+      grade = 'C';
+    } else if (combinedScore >= 55) {
+      grade = 'D';
+    } else {
+      grade = 'F';
+    }
+
+    // Generate detailed feedback message
+    let feedbackMessage = '';
+    
+    if (combinedScore >= 85) {
+      feedbackMessage = `✅ Excellent! Molarity: ${molarityInput.toFixed(4)} M (Error: ${percentError.toFixed(2)}%, Score: ${molarityScore}%). Working details score: ${stepsScore}%. Overall: ${combinedScore}%`;
+    } else if (combinedScore >= 75) {
+      feedbackMessage = `✓ Good work! Molarity: ${molarityInput.toFixed(4)} M (Error: ${percentError.toFixed(2)}%, Score: ${molarityScore}%). Working details score: ${stepsScore}%. Keep improving your calculations.`;
+    } else if (combinedScore >= 65) {
+      feedbackMessage = `△ Satisfactory. Molarity score: ${molarityScore}%, Steps score: ${stepsScore}%. Issues with steps: ${stepsIssues.join(', ')}. Please show clearer working.`;
+    } else if (combinedScore >= 55) {
+      feedbackMessage = `⚠ Needs improvement. Molarity: ${molarityScore}%, Steps: ${stepsScore}%. ${stepsIssues.join(', ')}. Show all calculation steps clearly.`;
+    } else {
+      feedbackMessage = `❌ Significant gaps (${combinedScore}%). Molarity issues: ${percentError.toFixed(2)}% error. Working details issues: ${stepsIssues.join(', ')}. Review the calculation method.`;
+    }
+
+    // ============ RECORD MEASUREMENTS ============
+    // Record the calculation
+    onMeasurementsUpdate({
+      name: 'Calculated Molarity',
+      value: molarityInput,
+      unit: 'M',
+    });
+
+    // Record the working details as an observation
+    onMeasurementsUpdate({
+      name: 'Calculation Method',
+      value: workingDetails.length,
+      unit: 'characters',
+    });
+
+    // ============ SET FEEDBACK & COMPLETION STATUS ============
+    setSubmissionFeedback({
+      isValid: true,
+      message: feedbackMessage,
+      percentError: percentError,
+      grade: grade,
+      score: score,
+      molarityScore: molarityScore,
+      stepsScore: stepsScore,
+      stepsIssues: stepsIssues,
+      combinedScore: combinedScore,
+      correctWorkingSteps: correctWorkingSteps,
+      correctC2: correctUnknownMolarity
+    });
+
+    setCalculationsSubmitted(true);
   };
 
+  const handleResetTitration = () => {
+    // In exam mode, prevent reset after submission
+    if (isExamMode && calculationsSubmitted) {
+      setSubmissionFeedback({
+        isValid: false,
+        message: '❌ EXAM MODE: Cannot perform another titration after submission. Results are final.'
+      });
+      return;
+    }
+
+    setTitrationAttempts(titrationAttempts + 1);
+    setBuretteVolume(0);
+    setInitialReading(0.0);
+    setFinalReading(null);
+    setFlaskColor('Colorless');
+    setEndpointReached(false);
+    setOverTitrated(false);
+    setUserCalculations({ titreVolume: '', molarity: '', workingDetails: '' });
+    setSubmissionFeedback(null); // Clear previous feedback
+    setCalculationsSubmitted(false); // Re-enable Submit Calculations button
+  };
+
+  const colorMap: Record<string, string> = {
+    'Red': '#ff6b6b',
+    'Orange (ENDPOINT!)': '#ffa500',
+    'Yellow (OVER-TITRATED!)': '#ffff00',
+    'Colorless': '#ffffff',
+    'Pale Pink (ENDPOINT!)': '#ffb3ba',
+    'Pink (OVER-TITRATED!)': '#ff69b4',
+  };
+
+  // ============ RENDER SETUP PHASE ============
+  if (setupPhase === 'apparatus') {
+    return (
+      <Box>
+        {/* Mode Indicator */}
+        <Paper sx={{ p: 1, mb: 2, backgroundColor: isExamMode ? '#ffebee' : '#e8f5e9', border: `2px solid ${isExamMode ? '#f44336' : '#4caf50'}` }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: isExamMode ? '#d32f2f' : '#2e7d32' }}>
+            {isExamMode ? '🔒 EXAM MODE - Single attempt, no retries' : '📚 PRACTICE MODE - Unlimited attempts, hints enabled'}
+          </Typography>
+        </Paper>
+
+        <Paper sx={{ p: 2, mb: 3, backgroundColor: '#e3f2fd', borderLeft: '4px solid #1976d2' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1565c0', mb: 1 }}>
+            🧪 STEP 1: APPARATUS SETUP
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+            Before starting the titration, you must prepare the burette and pipette correctly.
+          </Typography>
+        </Paper>
+
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12}>
+            <Card sx={{ backgroundColor: buretteRinsed ? '#e8f5e9' : '#fff3cd' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                  📌 Burette (50 mL)
+                </Typography>
+                <Typography variant="body2" sx={{ color: buretteRinsed ? '#2e7d32' : '#d32f2f', mb: 2, fontWeight: 'bold' }}>
+                  {buretteRinsed ? '✓ Rinsed' : '⚠ Not rinsed'}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  onClick={handleRinseBurette} 
+                  disabled={buretteRinsed}
+                  fullWidth
+                >
+                  Rinse Burette
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Card sx={{ backgroundColor: pipetteRinsed ? '#e8f5e9' : '#fff3cd' }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                  📌 Pipette (25 mL)
+                </Typography>
+                <Typography variant="body2" sx={{ color: pipetteRinsed ? '#2e7d32' : '#d32f2f', mb: 2, fontWeight: 'bold' }}>
+                  {pipetteRinsed ? '✓ Rinsed' : '⚠ Not rinsed'}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  onClick={handleRinsePipette} 
+                  disabled={pipetteRinsed}
+                  fullWidth
+                >
+                  Rinse Pipette
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 3 }}>
+          <Button 
+            variant="contained" 
+            onClick={() => setSetupPhase('solutions')}
+            disabled={!buretteRinsed || !pipetteRinsed}
+            fullWidth
+            sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold' }}
+          >
+            ✓ Apparatus Ready - Select Solutions
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // ============ RENDER SOLUTIONS SELECTION ============
+  if (setupPhase === 'solutions') {
+    return (
+      <Box>
+        <Paper sx={{ p: 2, mb: 3, backgroundColor: '#e8f5e9', borderLeft: '4px solid #2e7d32' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1b5e20', mb: 1 }}>
+            ⚗️ STEP 2: SELECT ACID & BASE
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+            Choose the acid (titrant) and base (analyte) for this titration, and set their concentrations.
+          </Typography>
+        </Paper>
+
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {/* Acid Selection */}
+          <Grid item xs={12} sm={6}>
+            <Paper sx={{ p: 2, backgroundColor: '#fff3e0' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                🧪 Titrant (Acid)
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                  Select Acid:
+                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 1,
+                }}>
+                  {availableAcids.map((acid) => (
+                    <Button
+                      key={acid.symbol}
+                      variant="contained"
+                      onClick={() => setSelectedAcid(acid)}
+                      sx={{ 
+                        justifyContent: 'flex-start',
+                        textTransform: 'none',
+                        color: selectedAcid.symbol === acid.symbol ? '#fff' : '#000',
+                        backgroundColor: selectedAcid.symbol === acid.symbol ? '#ff9800' : '#536d17',
+                        '&:hover': {
+                          backgroundColor: selectedAcid.symbol === acid.symbol ? '#ff9800' : '#ffc107',
+                        },
+                      }}
+                    >
+                      {acid.name}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
+              <TextField
+                label="Concentration (M)"
+                type="number"
+                value={customAcidConc}
+                onChange={(e) => setCustomAcidConc(e.target.value)}
+                inputProps={{ step: '0.01', min: '0.01' }}
+                fullWidth
+                sx={{
+                  '& .MuiInputBase-input': {
+                    color: '#000',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: '#666',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#ff9800',
+                  },
+                }}
+              />
+            </Paper>
+          </Grid>
+
+          {/* Base Selection */}
+          <Grid item xs={12} sm={6}>
+            <Paper sx={{ p: 2, backgroundColor: '#f3e5f5' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                🧪 Analyte (Base)
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
+                  Select Base:
+                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 1,
+                }}>
+                  {availableBases.map((base) => (
+                    <Button
+                      key={base.symbol}
+                      variant="contained"
+                      onClick={() => setSelectedBase(base)}
+                      sx={{ 
+                        justifyContent: 'flex-start',
+                        textTransform: 'none',
+                        color: selectedBase.symbol === base.symbol ? '#fff' : '#000',
+                        backgroundColor: selectedBase.symbol === base.symbol ? '#7b1fa2' : '#b9415f',
+                        '&:hover': {
+                          backgroundColor: selectedBase.symbol === base.symbol ? '#7b1fa2' : '#ce93d8',
+                        },
+                      }}
+                    >
+                      {base.name}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
+              <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 1, fontStyle: 'italic' }}>
+                (This is the unknown concentration we will calculate - C₂)
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ mt: 3, p: 2, backgroundColor: '#e3f2fd', borderRadius: 1, mb: 3 }}>
+          <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+            <strong>Summary:</strong>
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#000', display: 'block' }}>
+            ✓ Titrant (Acid): {selectedAcid.name} at {customAcidConc} M
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#000', display: 'block' }}>
+            ✓ Analyte (Base): {selectedBase.name} at {customBaseConc} M (25 mL)
+          </Typography>
+        </Box>
+
+        {/* Fill Burette and Measure Aliquot - Now in Solutions Phase */}
+        <Box sx={{ mt: 3, mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, color: '#000' }}>
+            ⚗️ Prepare Apparatus with Selected Solutions
+          </Typography>
+          
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Card sx={{ backgroundColor: buretteFilled ? '#e8f5e9' : '#f5f5f5' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                    🧴 Fill Burette with {selectedAcid.symbol}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: buretteFilled ? '#2e7d32' : '#d32f2f', mb: 2, fontWeight: 'bold' }}>
+                    {buretteFilled ? `✓ Filled with ${customAcidConc} M ${selectedAcid.symbol}` : '⚠ Not filled'}
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleFillBurette}
+                    disabled={buretteFilled}
+                    fullWidth
+                  >
+                    Fill Burette
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Card sx={{ backgroundColor: pipetteUsed ? '#e8f5e9' : '#f5f5f5' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                    📝 Measure 25 mL {selectedBase.symbol}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: pipetteUsed ? '#2e7d32' : '#d32f2f', mb: 2, fontWeight: 'bold' }}>
+                    {pipetteUsed ? `✓ 25 mL of ${selectedBase.symbol} measured into flask` : '⚠ Not measured'}
+                  </Typography>
+                  <Button 
+                    variant="contained" 
+                    onClick={handleUsePipette}
+                    disabled={!buretteFilled || pipetteUsed}
+                    fullWidth
+                  >
+                    Measure 25 mL Analyte
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </Box>
+
+        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+          {isPracticeMode && (
+            <Button 
+              variant="outlined" 
+              onClick={() => setSetupPhase('apparatus')}
+              fullWidth
+              sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold' }}
+            >
+              ← Back to Apparatus
+            </Button>
+          )}
+          <Button 
+            variant="contained" 
+            onClick={handleConfirmSolutions}
+            disabled={!buretteFilled || !pipetteUsed}
+            fullWidth
+            sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold', backgroundColor: '#2e7d32' }}
+          >
+            ✓ Confirm Solutions & Continue
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // ============ RENDER INDICATOR SELECTION ============
+  if (setupPhase === 'indicator') {
+    return (
+      <Box>
+        <Paper sx={{ p: 2, mb: 3, backgroundColor: '#f3e5f5', borderLeft: '4px solid #7b1fa2' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#6a1b9a', mb: 1 }}>
+            🎨 STEP 3: SELECT INDICATOR
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+            Choose the appropriate indicator for this titration.
+          </Typography>
+        </Paper>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Card sx={{ cursor: 'pointer', backgroundColor: selectedIndicator === 'methyl-orange' ? '#fff3e0' : '#f5f5f5', border: selectedIndicator === 'methyl-orange' ? '2px solid #ff9800' : 'none' }}>
+              <CardContent onClick={() => handleSelectIndicator('methyl-orange')}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                  Methyl Orange
+                </Typography>
+                <Box sx={{ p: 1, backgroundColor: '#ffcccc', borderRadius: 1, mb: 1, textAlign: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Red (pH &lt; 3.1)</Typography>
+                </Box>
+                <Box sx={{ p: 1, backgroundColor: '#ffff99', borderRadius: 1, mb: 1, textAlign: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Yellow (pH &gt; 4.4)</Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: '#2e7d32', display: 'block', fontWeight: 'bold' }}>
+                  ✓ Suitable for strong acid-strong base titrations
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <Card sx={{ cursor: 'pointer', backgroundColor: selectedIndicator === 'phenolphthalein' ? '#fff3e0' : '#f5f5f5', border: selectedIndicator === 'phenolphthalein' ? '2px solid #ff9800' : 'none' }}>
+              <CardContent onClick={() => handleSelectIndicator('phenolphthalein')}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: '#000' }}>
+                  Phenolphthalein
+                </Typography>
+                <Box sx={{ p: 1, backgroundColor: '#ffffff', borderRadius: 1, mb: 1, textAlign: 'center', border: '1px solid #ddd' }}>
+                  <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Colorless (pH &lt; 8.2)</Typography>
+                </Box>
+                <Box sx={{ p: 1, backgroundColor: '#ffb3ba', borderRadius: 1, mb: 1, textAlign: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Pink (pH &gt; 10)</Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: '#d32f2f', display: 'block', fontWeight: 'bold' }}>
+                  ⚠ Not suitable - endpoint pH too high for this reaction
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {selectedIndicator && (
+          <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+            {isPracticeMode && (
+              <Button 
+                variant="outlined" 
+                onClick={() => setSetupPhase('solutions')}
+                fullWidth
+                sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold' }}
+              >
+                ← Back to Solutions
+              </Button>
+            )}
+            <Button 
+              variant="contained" 
+              onClick={() => setSetupPhase('titration')}
+              fullWidth
+              sx={{ py: 1.5, fontSize: '1rem', fontWeight: 'bold' }}
+            >
+              ✓ Indicator Selected - Perform Titration
+            </Button>
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
+  // ============ RENDER TITRATION PHASE ============
   return (
     <Box>
-      {/* Instructions */}
       <Paper sx={{ p: 2, mb: 3, backgroundColor: '#e8f5e9', borderLeft: '4px solid #2e7d32' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1b5e20', mb: 1 }}>
-          📋 Instructions:
+          📋 STEP 4: PERFORM TITRATION
         </Typography>
-        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-          1. <strong>Drag the slider</strong> to add standard solution from the burette to the flask (starting with methyl orange indicator)
+        <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+          <strong>Titrant:</strong> {parseFloat(customAcidConc) || selectedAcid.defaultConc} M {selectedAcid.symbol} | <strong>Analyte:</strong> 25 mL {selectedBase.symbol} ({customBaseConc} M) | <strong>Indicator:</strong> {selectedIndicator === 'methyl-orange' ? 'Methyl Orange' : 'Phenolphthalein'}
         </Typography>
-        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-          2. <strong>Watch the color change</strong> as you add more solution: Red → Medium Red → Pale Pink → Colorless + Pink (endpoint)
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#000000', mb: 1 }}>
-          3. <strong>Stop at the endpoint</strong> when the solution turns colorless with a faint pink tinge that persists for 30 seconds
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#000000' }}>
-          4. <strong>Record the burette reading</strong> at the endpoint to calculate the concentration of unknown acid/base
+        <Typography variant="body2" sx={{ color: '#000' }}>
+          Carefully add titrant from the burette until you reach the endpoint (color change).
         </Typography>
       </Paper>
 
-      <Typography variant="subtitle2" sx={{ mb: 2 }}>
-        Burette Reading: <strong>{burette.toFixed(1)} mL</strong>
-      </Typography>
-      <input
-        type="range"
-        min="0"
-        max="25"
-        step="0.5"
-        value={burette}
-        onChange={(e) => handleBuretteChange(parseFloat(e.target.value))}
-        style={{ width: '100%', cursor: 'pointer' }}
-      />
-      <Box
-        sx={{
-          mt: 2,
-          p: 2,
-          backgroundColor: colorMap[color] || '#cccccc',
-          border: '2px solid #667eea',
-          borderRadius: 1,
-          textAlign: 'center',
-          color: '#000000',
-        }}
-      >
-        <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#000000' }}>
-          Flask Color: {color}
-        </Typography>
-      </Box>
+      {/* Apparatus Setup Diagram */}
+      <Card sx={{ mb: 3, backgroundColor: '#f5f5f5' }}>
+        <CardContent>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2, color: '#000' }}>
+            🔧 Laboratory Apparatus Setup
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 2, mb: 2 }}>
+            {/* Retort Stand */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#666' }}>📏</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Retort Stand & Clamp</Typography>
+            </Box>
+            {/* Burette */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#1976d2' }}>📊</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Burette (50 mL)</Typography>
+            </Box>
+            {/* Pipette */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#4caf50' }}>💧</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Pipette (25 mL)</Typography>
+            </Box>
+            {/* Conical Flask */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#ff9800' }}>🧪</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Conical Flask</Typography>
+            </Box>
+            {/* Indicator */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#f44336' }}>🌈</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Indicator</Typography>
+            </Box>
+            {/* Funnel */}
+            <Box sx={{ textAlign: 'center', p: 2, backgroundColor: '#fff', borderRadius: 1, border: '1px solid #ddd' }}>
+              <Typography variant="h4" sx={{ color: '#9c27b0' }}>⛳</Typography>
+              <Typography variant="caption" sx={{ color: '#000', fontWeight: 'bold' }}>Funnel</Typography>
+            </Box>
+          </Box>
+          <Typography variant="caption" sx={{ color: '#666' }}>
+            All apparatus is properly set up and ready. Proceed with the titration.
+          </Typography>
+        </CardContent>
+      </Card>
 
-      {/* Results Interpretation */}
-      {color === 'Colorless + Pink (ENDPOINT!)' && (
-        <Paper sx={{ p: 2, mt: 2, backgroundColor: '#fff3e0', borderLeft: '4px solid #e65100' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#e65100', mb: 1 }}>
-            ✅ Endpoint Reached!
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#000000' }}>
-            <strong>Interpretation:</strong> At {burette.toFixed(1)} mL, the endpoint has been reached. This is the volume of standard solution needed to neutralize the acid/base in the flask.
-          </Typography>
-        </Paper>
+      <Grid container spacing={2}>
+        {/* Burette Visualization */}
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                📊 Burette Reading
+              </Typography>
+              <Box sx={{ 
+                border: '2px solid #333', 
+                borderRadius: 1, 
+                p: 2, 
+                backgroundColor: '#f5f5f5',
+                minHeight: 150,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <Typography variant="caption" sx={{ textAlign: 'center', color: '#000' }}>
+                  50 mL
+                </Typography>
+                <Box sx={{ height: `${(1 - buretteVolume / 50) * 100}%`, backgroundColor: '#87ceeb', borderRadius: 1 }} />
+                <Typography variant="h6" sx={{ textAlign: 'center', color: '#000', fontWeight: 'bold' }}>
+                  {buretteVolume.toFixed(1)} mL
+                </Typography>
+              </Box>
+              <Button 
+                variant="text" 
+                size="small" 
+                onClick={() => setShowZoom(!showZoom)}
+                fullWidth
+                sx={{ mt: 1 }}
+              >
+                {showZoom ? 'Hide' : 'Show'} Scale
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Flask Visualization */}
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                🧪 Conical Flask
+              </Typography>
+              <Box sx={{
+                p: 3,
+                backgroundColor: colorMap[flaskColor] || '#ffffff',
+                border: '2px solid #333',
+                borderRadius: 1,
+                textAlign: 'center',
+                minHeight: 150,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Typography variant="body2" sx={{ color: '#000', fontWeight: 'bold' }}>
+                  {flaskColor}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 1 }}>
+                Contains: 25 mL unknown acid + indicator
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Burette Control */}
+        <Grid item xs={12} sm={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                🔧 Add Titrant
+              </Typography>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="0.1"
+                value={buretteVolume}
+                onChange={(e) => handleBuretteChange(parseFloat(e.target.value))}
+                style={{ width: '100%', cursor: 'pointer' }}
+                disabled={!selectedIndicator}
+              />
+              <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 1 }}>
+                Drag slider to add solution
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Zoom View */}
+      {showZoom && (
+        <Card sx={{ mt: 2, backgroundColor: '#f9f9f9' }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+              🔍 Burette Scale (Zoomed)
+            </Typography>
+            <Box sx={{ p: 2, backgroundColor: '#fff', border: '1px solid #ddd', borderRadius: 1 }}>
+              <Typography variant="caption" sx={{ color: '#000', display: 'block', mb: 0.5 }}>
+                0 mL (Top)
+              </Typography>
+              {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((mark) => (
+                <Box key={mark} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                  <Box sx={{ width: mark % 5 === 0 ? 20 : 10, height: 2, backgroundColor: '#333' }} />
+                  {mark % 5 === 0 && (
+                    <Typography variant="caption" sx={{ ml: 1, color: '#000', minWidth: 30 }}>
+                      {mark} mL
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+              <Typography variant="caption" sx={{ color: '#000', display: 'block', mt: 1 }}>
+                Meniscus (eye level): {buretteVolume.toFixed(1)} mL
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Endpoint Detection */}
+      {endpointReached && (
+        <Card sx={{ mt: 2, backgroundColor: '#fff3e0', border: '2px solid #ff9800' }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#e65100', mb: 1 }}>
+              ✅ ENDPOINT REACHED!
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#000' }}>
+              The solution has reached the endpoint at {buretteVolume.toFixed(1)} mL. Record this as your final reading.
+            </Typography>
+            <Button 
+              variant="contained" 
+              onClick={handleRecordFinalReading}
+              disabled={finalReading !== null}
+              fullWidth
+              sx={{ mt: 1 }}
+            >
+              Record Final Reading
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {overTitrated && (
+        <Card sx={{ mt: 2, backgroundColor: '#ffebee', border: '2px solid #f44336' }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#c62828', mb: 1 }}>
+              ❌ OVER-TITRATED!
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#000' }}>
+              You have added too much titrant. The result is invalid. Reset and try again.
+            </Typography>
+            <Button 
+              variant="contained"
+              color="error"
+              onClick={handleResetTitration}
+              fullWidth
+              sx={{ mt: 1 }}
+            >
+              Reset Titration (Attempt {titrationAttempts + 1})
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Calculations Section */}
+      {finalReading !== null && (
+        <Card sx={{ mt: 2 }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+              📝 CALCULATIONS
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Initial Burette Reading (mL)"
+                  value={initialReading}
+                  disabled
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Final Burette Reading (mL)"
+                  value={finalReading}
+                  disabled
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Volume of Titrant Used (Titre) - mL"
+                  value={(finalReading - (initialReading || 0)).toFixed(2)}
+                  disabled
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="Working Details (Show your calculation steps)"
+                  placeholder="Show all your calculation steps here. Example: Write your formula, substitute values, and show each step."
+                  value={userCalculations.workingDetails}
+                  onChange={(e) => setUserCalculations({ ...userCalculations, workingDetails: e.target.value })}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Calculated Molarity of Unknown (M)"
+                  value={userCalculations.molarity}
+                  onChange={(e) => setUserCalculations({ ...userCalculations, molarity: e.target.value })}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Button 
+                  variant="contained"
+                  onClick={handleSubmitCalculations}
+                  disabled={calculationsSubmitted}
+                  fullWidth
+                  sx={{ backgroundColor: calculationsSubmitted ? '#4caf50' : undefined }}
+                >
+                  {calculationsSubmitted ? '✓ Calculations Submitted' : 'Submit Calculations'}
+                </Button>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Submission Feedback */}
+      {submissionFeedback && (
+        <Card sx={{ 
+          mt: 2, 
+          backgroundColor: submissionFeedback.isValid ? '#e8f5e9' : '#ffebee',
+          border: `2px solid ${submissionFeedback.isValid ? '#4caf50' : '#f44336'}`
+        }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: submissionFeedback.isValid ? '#2e7d32' : '#c62828', mb: 2 }}>
+              {submissionFeedback.isValid ? '✅ CALCULATION FEEDBACK' : '❌ VALIDATION ERROR'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#000', mb: 1 }}>
+              {submissionFeedback.message}
+            </Typography>
+
+            {submissionFeedback.isValid && submissionFeedback.percentError !== undefined && (
+              <Box sx={{ mt: 2, p: 2, backgroundColor: '#fff', borderRadius: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>
+                      Percentage Error
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                      {submissionFeedback.percentError.toFixed(2)}%
+                    </Typography>
+                  </Grid>
+                  
+                  {/* Marking Scheme Breakdown */}
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
+                      📊 Marking Scheme Breakdown
+                    </Typography>
+                    <Box sx={{ p: 1.5, backgroundColor: '#f5f5f5', borderRadius: 1, border: '1px solid #ddd' }}>
+                      <Grid container spacing={1}>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ p: 1, backgroundColor: '#e3f2fd', borderRadius: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: '#1565c0', display: 'block', fontWeight: 'bold' }}>
+                              Molarity Accuracy (60%)
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#000', fontWeight: 'bold', fontSize: '1.1em' }}>
+                              {submissionFeedback.molarityScore}/100
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                              Error: {submissionFeedback.percentError.toFixed(2)}%
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ p: 1, backgroundColor: '#f3e5f5', borderRadius: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: '#6a1b9a', display: 'block', fontWeight: 'bold' }}>
+                              Calculation Steps (40%)
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#000', fontWeight: 'bold', fontSize: '1.1em' }}>
+                              {submissionFeedback.stepsScore}/100
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                              Combined: {submissionFeedback.combinedScore}%
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                      
+                      {/* Total Mark */}
+                      <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#fff9c4', borderRadius: 0.5, border: '2px solid #fbc02d' }}>
+                        <Grid container spacing={1}>
+                          <Grid item xs={12}>
+                            <Typography variant="caption" sx={{ color: '#f57f17', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                              📈 Total Mark
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#f57f17', fontWeight: 'bold', fontSize: '1.3em' }}>
+                              {Math.round(((submissionFeedback.molarityScore || 0) + (submissionFeedback.stepsScore || 0)) / 2)}%
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.3 }}>
+                              ({(submissionFeedback.molarityScore || 0)} + {(submissionFeedback.stepsScore || 0)}) / 200 × 100%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Box sx={{ borderTop: '1px solid #fbc02d', pt: 1 }}>
+                              <Typography variant="caption" sx={{ color: '#f57f17', fontWeight: 'bold', display: 'block', mb: 0.3 }}>
+                                Grade
+                              </Typography>
+                              <Typography variant="h5" sx={{ color: '#f57f17', fontWeight: 'bold' }}>
+                                {submissionFeedback.grade}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      
+                      {/* Show Correct Working Steps */}
+                      <Box sx={{ mt: 1.5, p: 1, backgroundColor: '#e8f5e9', borderRadius: 0.5, border: '1px solid #81c784' }}>
+                        <Typography variant="caption" sx={{ color: '#2e7d32', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                          ✓ Correct Working Steps (Used for Marking):
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#000', display: 'block', whiteSpace: 'pre-wrap', fontFamily: 'monospace', backgroundColor: '#fff', p: 0.5, borderRadius: 0.25 }}>
+                          {submissionFeedback.correctWorkingSteps}
+                        </Typography>
+                      </Box>
+                      
+                      {/* Issues if any */}
+                      {submissionFeedback.stepsIssues && submissionFeedback.stepsIssues.length > 0 && (
+                        <Box sx={{ mt: 1.5, p: 1, backgroundColor: '#fff3e0', borderRadius: 0.5, border: '1px solid #ffb74d' }}>
+                          <Typography variant="caption" sx={{ color: '#e65100', fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                            ⚠ Areas to Improve in Working Steps:
+                          </Typography>
+                          {submissionFeedback.stepsIssues.map((issue: string, idx: number) => (
+                            <Typography key={idx} variant="caption" sx={{ color: '#555', display: 'block' }}>
+                              • {issue}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Box sx={{ p: 1, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+                      <Typography variant="caption" sx={{ color: '#000', display: 'block' }}>
+                        <strong>Expected Molarity:</strong> {submissionFeedback.correctC2?.toFixed(4)} M
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#000', display: 'block' }}>
+                        <strong>Your Result:</strong> {userCalculations.molarity}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 1 }}>
+                        This practical is complete. You can perform another titration to improve your results, or proceed to save and submit your work.
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Repeat Titration Button */}
+      {finalReading !== null && (
+        <Button 
+          variant="outlined"
+          onClick={handleResetTitration}
+          disabled={isExamMode && calculationsSubmitted}
+          fullWidth
+          sx={{ mt: 2 }}
+        >
+          {isExamMode && calculationsSubmitted ? 'Results Submitted - No More Attempts' : 'Perform Another Titration'}
+        </Button>
       )}
     </Box>
   );

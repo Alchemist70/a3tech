@@ -163,6 +163,11 @@ const calculateStatistics = (labResults) => {
 const scoreChemistryLab = (labResult, expectedResults) => {
   const baseScoring = scoreLabResult(labResult, expectedResults);
 
+  // TITRATION-SPECIFIC SCORING
+  if (labResult.labTitle && labResult.labTitle.toLowerCase().includes('titration')) {
+    return scoreTitrationLab(labResult, expectedResults, baseScoring);
+  }
+
   // Add chemistry-specific criteria
   if (labResult.experimentData && labResult.experimentData.observations) {
     const obs = labResult.experimentData.observations.toLowerCase();
@@ -179,6 +184,110 @@ const scoreChemistryLab = (labResult, expectedResults) => {
   }
 
   return baseScoring;
+};
+
+/**
+ * Titration-specific scoring for acid-base and redox titrations
+ */
+const scoreTitrationLab = (labResult, expectedResults, baseScoring) => {
+  let titrationScore = 0;
+
+  // 1. APPARATUS & PROCEDURE (20 points)
+  // Check if measurements indicate proper procedure
+  const measurements = labResult.experimentData?.measurements || [];
+  const burethReading = measurements.find(m => m.name && m.name.toLowerCase().includes('titre'));
+  
+  if (burethReading && burethReading.value > 0) {
+    titrationScore += 20; // Full marks for completing titration
+  }
+
+  // 2. TITRE VOLUME ACCURACY (30 points)
+  if (burethReading && expectedResults && expectedResults.expectedTitre) {
+    const actualTitre = burethReading.value;
+    const expectedTitre = expectedResults.expectedTitre;
+    const tolerance = expectedTitre * 0.05; // 5% tolerance
+    const difference = Math.abs(actualTitre - expectedTitre);
+    
+    if (difference <= tolerance) {
+      titrationScore += 30; // Full marks within tolerance
+    } else if (difference <= tolerance * 2) {
+      titrationScore += 20; // Partial marks, 5-10% error
+    } else if (difference <= tolerance * 3) {
+      titrationScore += 10; // Minimal marks, 10-15% error
+    } else {
+      titrationScore += 0; // Over-titration or major error
+    }
+  } else {
+    titrationScore += 0; // No titration data
+  }
+
+  // 3. CALCULATIONS (35 points)
+  const molarityMeasurement = measurements.find(m => m.name && m.name.toLowerCase().includes('molarity'));
+  
+  if (molarityMeasurement && expectedResults && expectedResults.expectedMolarity) {
+    const actualMolarity = molarityMeasurement.value;
+    const expectedMolarity = expectedResults.expectedMolarity;
+    const tolerance = expectedMolarity * 0.05; // 5% tolerance
+    const difference = Math.abs(actualMolarity - expectedMolarity);
+    
+    if (difference <= tolerance) {
+      titrationScore += 35; // Full marks within tolerance
+    } else if (difference <= tolerance * 2) {
+      titrationScore += 25; // Partial marks
+    } else if (difference <= tolerance * 3) {
+      titrationScore += 15; // Minimal marks
+    } else {
+      titrationScore += 0; // Major calculation error
+    }
+  } else {
+    titrationScore += 0; // No calculation submitted
+  }
+
+  // 4. OBSERVATIONS & INDICATOR (15 points)
+  if (labResult.experimentData?.observations) {
+    const obs = labResult.experimentData.observations.toLowerCase();
+    let indicatorPoints = 0;
+    
+    // Check for correct indicator description
+    if (obs.includes('methyl orange') || obs.includes('phenolphthalein')) {
+      indicatorPoints += 5;
+    }
+    
+    // Check for endpoint description
+    if (obs.includes('endpoint') || obs.includes('color change') || obs.includes('pink') || obs.includes('yellow')) {
+      indicatorPoints += 10;
+    }
+    
+    titrationScore += indicatorPoints;
+  }
+
+  // Calculate final score
+  baseScoring.totalScore = Math.min(100, titrationScore);
+  baseScoring.grade = calculateGrade(baseScoring.totalScore);
+  baseScoring.feedback = generateTitrationFeedback(titrationScore, baseScoring.grade, burethReading, molarityMeasurement);
+
+  return baseScoring;
+};
+
+/**
+ * Generate feedback specific to titration practicals
+ */
+const generateTitrationFeedback = (score, grade, titreData, molarityData) => {
+  let feedback = '';
+
+  if (grade === 'A') {
+    feedback = `Excellent work! Your titration was executed with precision. Your titre value and molarity calculations are within acceptable limits. The procedure was followed correctly.`;
+  } else if (grade === 'B') {
+    feedback = `Good work! Your titration was mostly accurate. Minor variations in titre volume or calculation precision were noted. Review the meniscus reading technique for improvement.`;
+  } else if (grade === 'C') {
+    feedback = `Satisfactory. Your titration showed understanding of the procedure, but there were some errors in measurements or calculations. Recheck your burette readings and calculation steps.`;
+  } else if (grade === 'D') {
+    feedback = `Your titration needs improvement. Significant errors in titre volume or molarity calculation were detected. Practice reading the meniscus more carefully and double-check your stoichiometry.`;
+  } else {
+    feedback = `The titration data suggests procedural errors or incomplete work. Ensure you reach the endpoint correctly, record readings accurately, and verify your calculations. Repeat the practical with more care.`;
+  }
+
+  return feedback;
 };
 
 /**
@@ -226,8 +335,10 @@ module.exports = {
   scoreChemistryLab,
   scorePhysicsLab,
   scoreBiologyLab,
+  scoreTitrationLab,
   calculateAccuracy,
   calculateGrade,
   calculateStatistics,
-  generateFeedback
+  generateFeedback,
+  generateTitrationFeedback
 };

@@ -29,6 +29,9 @@ router.put('/session/:id/submit', labResultController.submitLab);
 // Grade lab
 router.put('/session/:id/grade', labResultController.gradeLab);
 
+// Validate titration data
+router.post('/titration/validate', labResultController.validateTitration);
+
 // Generate report
 router.get('/session/:id/report', labResultController.generateLabReport);
 
