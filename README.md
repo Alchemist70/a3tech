@@ -1,4 +1,4 @@
-# Alchemist Research Website
+# A3tech Research Website
 
 A comprehensive educational website showcasing cutting-edge AI research projects in federated learning, biomarker discovery, and intelligent transportation systems. Built with React.js, Express.js, and MongoDB Atlas.
 
