@@ -3,11 +3,11 @@
   publish = "build"
   command = "CI=false npm install && npm run build"
 
-# Redirect API requests to Vercel backend
-# IMPORTANT: Replace "https://your-backend-url.vercel.app" with your actual Vercel backend URL after deployment
+# Redirect API requests to Render backend (fallback - frontend should use REACT_APP_API_BASE_URL)
+# This is a safety fallback in case environment variables are not set
 [[redirects]]
   from = "/api/*"
-  to = "https://a3tech.vercel.app/api/:splat"
+  to = "https://a3tech-backend.onrender.com/api/:splat"
   status = 200
   force = true
 
