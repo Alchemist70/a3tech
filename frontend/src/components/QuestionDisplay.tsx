@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import EmojiIcon from '@mui/icons-material/EmojiEmotions';
 import GradingResults from './GradingResults';
+import API_BASE_URL from '../config/api';
 
 interface Question {
   question_id: string;
@@ -87,7 +88,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
       // Add cache-busting parameter to ensure fresh API response
       const timestamp = Date.now();
       const response = await fetch(
-        `/api/practical-questions/random/1?mode=${labMode}&t=${timestamp}`,
+        `${API_BASE_URL}/practical-questions/random/1?mode=${labMode}&t=${timestamp}`,
         {
           method: 'GET',
           headers: { 
@@ -164,7 +165,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
       };
 
       // Call grading API endpoint
-      const response = await fetch('/api/grade-practical-questions', {
+      const response = await fetch(`${API_BASE_URL}/grade-practical-questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
